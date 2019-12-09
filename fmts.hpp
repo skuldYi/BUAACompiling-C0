@@ -27,14 +27,17 @@ namespace fmt {
 			case miniplc0::ErrInvalidIdentifier:
 				name = "Identifier is invalid";
 				break;
+			case miniplc0::ErrInvalidNumberFormat:
+				name = "Number format is invalid";
+				break;
+			case miniplc0::ErrInvalidCharacter:
+				name = "Character format is invalid";
+				break;
+			case miniplc0::ErrIncompleteComment:
+				name = "The comment is incomplete.";
+				break;
 			case miniplc0::ErrIntegerOverflow:
 				name = "The integer is too big(int64_t).";
-				break;
-			case miniplc0::ErrNoBegin:
-				name = "The program should start with 'begin'.";
-				break;
-			case miniplc0::ErrNoEnd:
-				name = "The program should end with 'end'.";
 				break;
 			case miniplc0::ErrNeedIdentifier:
 				name = "Need an identifier here.";
@@ -115,47 +118,122 @@ namespace fmt {
 			case miniplc0::UNSIGNED_INTEGER:
 				name = "UnsignedInteger";
 				break;
+			case miniplc0::UNSIGNED_CHAR:
+				name = "UnsignedChar";
+				break;
+			case miniplc0::STRING:
+				name = "String";
+				break;
 			case miniplc0::IDENTIFIER:
 				name = "Identifier";
 				break;
-			case miniplc0::BEGIN:
-				name = "Begin";
-				break;
-			case miniplc0::END:
-				name = "End";
-				break;
-			case miniplc0::VAR:
-				name = "Var";
-				break;
-			case miniplc0::CONST:
-				name = "Const";
-				break;
-			case miniplc0::PRINT:
-				name = "Print";
-				break;
-			case miniplc0::PLUS_SIGN:
-				name = "PlusSign";
-				break;
-			case miniplc0::MINUS_SIGN:
-				name = "MinusSign";
-				break;
-			case miniplc0::MULTIPLICATION_SIGN:
-				name = "MultiplicationSign";
-				break;
-			case miniplc0::DIVISION_SIGN:
-				name = "DivisionSign";
-				break;
-			case miniplc0::EQUAL_SIGN:
-				name = "EqualSign";
-				break;
+            case miniplc0::CONST:
+                name = "Const";
+                break;
+            case miniplc0::VOID:
+                name = "Void";
+                break;
+            case miniplc0::INT:
+                name = "Int";
+                break;
+            case miniplc0::CHAR:
+                name = "Char";
+                break;
+            case miniplc0::DOUBLE:
+                name = "Double";
+                break;
+            case miniplc0::STRUCT:
+                name = "Struct";
+                break;
+            case miniplc0::IF:
+                name = "If";
+                break;
+            case miniplc0::ELSE:
+                name = "Else";
+                break;
+            case miniplc0::SWITCH:
+                name = "Switch";
+                break;
+            case miniplc0::CASE:
+                name = "Case";
+                break;
+            case miniplc0::DEFAULT:
+                name = "Default";
+                break;
+            case miniplc0::WHILE:
+                name = "While";
+                break;
+            case miniplc0::FOR:
+                name = "For";
+                break;
+            case miniplc0::DO:
+                name = "Do";
+                break;
+            case miniplc0::RETURN:
+                name = "Return";
+                break;
+            case miniplc0::BREAK:
+                name = "Break";
+                break;
+            case miniplc0::CONTINUE:
+                name = "Continue";
+                break;
+            case miniplc0::PRINT:
+                name = "Print";
+                break;
+            case miniplc0::SCAN:
+                name = "Scan";
+                break;
+            case miniplc0::PLUS_SIGN:
+                name = "PlusSign";
+                break;
+            case miniplc0::MINUS_SIGN:
+                name = "MinusSign";
+                break;
+            case miniplc0::MULTIPLICATION_SIGN:
+                name = "MultiplicationSign";
+                break;
+            case miniplc0::DIVISION_SIGN:
+                name = "DivisionSign";
+                break;
+            case miniplc0::ASSIGN_SIGN:
+                name = "AssignSign";
+                break;
+            case miniplc0::LESS_SIGN:
+                name = "LessSign";
+                break;
+            case miniplc0::LESSEQUAL_SIGN:
+                name = "LessEqualSign";
+                break;
+            case miniplc0::GREATER_SIGN:
+                name = "GreaterSign";
+                break;
+            case miniplc0::GREATEREQUAL_SIGN:
+                name = "GreaterEqualSign";
+                break;
+            case miniplc0::NOTEQUAL_SIGN:
+                name = "NotEqualSign";
+                break;
+            case miniplc0::EQUAL_SIGN:
+                name = "EqualSign";
+                break;
 			case miniplc0::SEMICOLON:
 				name = "Semicolon";
 				break;
+			case miniplc0::COMMA:
+				name = "Comma";
+				break;
 			case miniplc0::LEFT_PAREN:
-				name = "LeftBracket";
+				name = "LeftParen";
 				break;
 			case miniplc0::RIGHT_PAREN:
-				name = "RightBracket";
+				name = "RightParen";
+				break;
+			case miniplc0::LEFT_BRACE:
+				name = "LeftBrace";
+				break;
+			case miniplc0::RIGHT_BRACE:
+				name = "RightBrace";
 				break;
 			}
 			return format_to(ctx.out(), name);

@@ -28,7 +28,7 @@ namespace miniplc0 {
         long ret;
         try {
             // auto choose base: dec or hex
-            ret = std::stoi(s, 0, 0);
+            ret = std::stol(s, 0, 0);
         } catch (std::out_of_range& e) {
             return {};
         }
@@ -68,7 +68,8 @@ namespace miniplc0 {
 		std::pair<std::optional<Token>, std::optional<CompilationError>> result;
 		std::pair<int64_t, int64_t> pos;	// <line, column>
 		DFAState current_state = DFAState::INITIAL_STATE;
-		
+		DFAState previous_state;
+
 		while (true) {
 			switch (current_state) {
 
@@ -149,7 +150,7 @@ namespace miniplc0 {
                 } else if (miniplc0::isalpha(peek)) {
                     return makeCE(pos, ErrInvalidIdentifier);
                 } else {
-                    return makeTk(TokenType::UNSIGNED_INTEGER, 0);
+                    return makeTk(TokenType::UNSIGNED_INTEGER, 0L);
                 }
                 break;
             }
@@ -204,34 +205,34 @@ namespace miniplc0 {
             case EQUAL_SIGN_STATE: {
                 if (peek == '=') {
                     peek = nextChar();
-                    return makeTk(TokenType::Z_SIGN, "==");
+                    return makeTk(TokenType::EQUAL_SIGN, "==");
                 } else {
-                    return makeTk(TokenType::EQUAL_SIGN, '=');
+                    return makeTk(TokenType::ASSIGN_SIGN, '=');
                 }
             }
 
             case LESS_SIGN_STATE: {
                 if (peek == '=') {
                     peek = nextChar();
-                    return makeTk(TokenType::LE_SIGN, "<=");
+                    return makeTk(TokenType::LESSEQUAL_SIGN, "<=");
                 } else {
-                    return makeTk(TokenType::LT_SIGN, '<');
+                    return makeTk(TokenType::LESS_SIGN, '<');
                 }
             }
 
             case GREATER_SIGN_STATE: {
                 if (peek == '=') {
                     peek = nextChar();
-                    return makeTk(TokenType::GE_SIGN, ">=");
+                    return makeTk(TokenType::GREATEREQUAL_SIGN, ">=");
                 } else {
-                    return makeTk(TokenType::GT_SIGN, '>');
+                    return makeTk(TokenType::GREATER_SIGN, '>');
                 }
             }
 
             case EXCLAM_SIGN_STATE: {
                 if (peek == '=') {
                     peek = nextChar();
-                    return makeTk(TokenType::NZ_SIGN, "!=");
+                    return makeTk(TokenType::NOTEQUAL_SIGN, "!=");
                 } else {
                     return makeCE(pos, ErrInvalidInput);
                 }
@@ -306,18 +307,88 @@ namespace miniplc0 {
                         DieAndPrint("wrong sign in single_sign_state.");
                         break;
                 }
+                break;
             }
 
             case CHAR_STATE: {
+                if (peek == '\'') {
+                    if (ss.str().length() == 2) {
+                        // ', ch
+                        peek = nextChar();
+                        return makeTk(TokenType::CHAR, ss.str()[1]);
+                    } else {
+                        return makeCE(pos, ErrInvalidCharacter);
+                    }
+                } else if (peek == '\\') {
+                    previous_state = current_state;
+                    current_state = DFAState::ESCAPE_STATE;
+                    peek = nextChar();
+                } else {
+                    ss << peek;
+                    peek = nextChar();
+                }
 
+                break;
             }
 
             case STRING_STATE: {
+                if (peek == '"') {
+                    // empty string is legal
+                    peek = nextChar();
+                    return makeTk(TokenType::STRING, ss.str().substr(1));
+                } else if (peek == '\\') {
+                    previous_state = current_state;
+                    current_state = DFAState::ESCAPE_STATE;
+                    peek = nextChar();
+                } else {
+                    ss << peek;
+                    peek = nextChar();
+                }
 
+                break;
             }
 
             case ESCAPE_STATE: {
-
+//            '\\' | "\'" | '\"' | '\n' | '\r' | '\t'
+//            '\x'<hexadecimal-digit><hexadecimal-digit>
+                char escape;
+                switch (peek) {
+                    case '\\':
+                        escape = '\\';
+                        break;
+                    case '\'':
+                        escape = '\'';
+                        break;
+                    case '"':
+                        escape = '"';
+                        break;
+                    case 'n':
+                        escape = '\n';
+                        break;
+                    case 'r':
+                        escape = '\r';
+                        break;
+                    case 't':
+                        escape = '\t';
+                        break;
+                    case 'x': {
+                        std::string s;
+                        peek = nextChar();
+                        s += peek;
+                        peek = nextChar();
+                        s += peek;
+                        if (!miniplc0::isxdigit(s[0]) || !miniplc0::isxdigit(s[1]))
+                            return makeCE(pos, ErrInvalidCharacter);
+                        escape = (char) std::stoi(s, 0, 16);
+                        break;
+                    }
+                    default:
+                        return makeCE(pos, ErrInvalidCharacter);
+                }
+                ss << escape;
+                peek = nextChar();
+                current_state = previous_state;
+                break;
             }
 
 			default:
@@ -399,11 +470,5 @@ namespace miniplc0 {
 	bool Tokenizer::isEOF() {
 		return _ptr.first >= _lines_buffer.size();
 	}
-
-	// Note: Is it evil to unread a buffer?
-//	void Tokenizer::unreadLast() {
-//		_ptr = previousPos();
-//	}
-
 
 }

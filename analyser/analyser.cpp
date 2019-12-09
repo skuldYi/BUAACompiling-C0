@@ -22,8 +22,8 @@ namespace miniplc0 {
 		// 'begin'
 		auto bg = nextToken();
 		// if (!bg.has_value() || bg.value().GetType() != TokenType::BEGIN)
-		if (mismatchType(bg, TokenType::BEGIN))
-			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoBegin);
+//		if (mismatchType(bg, TokenType::BEGIN))
+//			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoBegin);
 
 		// <主过程>
 		auto err = analyseMain();
@@ -33,8 +33,8 @@ namespace miniplc0 {
 		// 'end'
 		auto ed = nextToken();
 		// if (!ed.has_value() || ed.value().GetType() != TokenType::END)
-		if (mismatchType(ed, TokenType::END))
-			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoEnd);
+//		if (mismatchType(ed, TokenType::END))
+//			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoEnd);
 		return {};
 	}
 
@@ -81,7 +81,7 @@ namespace miniplc0 {
 
 			// '='
 			next = nextToken();
-			if (mismatchType(next, TokenType::EQUAL_SIGN))
+			if (mismatchType(next, TokenType::ASSIGN_SIGN))
 				return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrConstantNeedValue);
 
 			// <常表达式>
@@ -111,10 +111,10 @@ namespace miniplc0 {
                 return {};
 
             // 如果是 var 那么说明应该推导 <常量声明> 否则直接返回
-            if (next.value().GetType() != TokenType::VAR) {
-                unreadToken();
-                return {};
-            }
+//            if (next.value().GetType() != TokenType::VAR) {
+//                unreadToken();
+//                return {};
+//            }
 
             // <标识符>
             next = nextToken();
@@ -130,7 +130,7 @@ namespace miniplc0 {
                 return {};
 
             // 如果不是 = 那么说明变量未初始化
-            if (next.value().GetType() != TokenType::EQUAL_SIGN) {
+            if (next.value().GetType() != TokenType::ASSIGN_SIGN) {
                 unreadToken();
                 addUninitializedVariable(varId);
 
@@ -269,7 +269,7 @@ namespace miniplc0 {
 
         // =
         next = nextToken();
-        if (mismatchType(next, TokenType::EQUAL_SIGN))
+        if (mismatchType(next, TokenType::ASSIGN_SIGN))
             return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
 
         // <表达式>
