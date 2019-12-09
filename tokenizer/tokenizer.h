@@ -26,14 +26,16 @@ namespace miniplc0 {
 			HEX_INTEGER_STATE,
 			IDENTIFIER_STATE,
 			EQUAL_SIGN_STATE,
-			GREATER_STATE,
-			LESS_STATE,
-			EXCLAM_STATE,
+			GREATER_SIGN_STATE,
+			LESS_SIGN_STATE,
+			EXCLAM_SIGN_STATE,
             DIVISION_SIGN_STATE,
-            ESCAPE_STATE,
+            MULTI_COMMENT_STATE,
+            SINGLE_COMMENT_STATE,
+			SINGLE_SIGN_STATE,
             CHAR_STATE,
             STRING_STATE,
-			SINGLE_STATE
+            ESCAPE_STATE
 		};
 	public:
 		Tokenizer(std::istream& ifs)
@@ -82,5 +84,6 @@ namespace miniplc0 {
 		// 以行为基础的缓冲区
 		std::vector<std::string> _lines_buffer;
 		std::unordered_map<std::string, TokenType> _reservedWord;
+        char peek;
 	};
 }

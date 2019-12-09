@@ -68,7 +68,6 @@ namespace miniplc0 {
 		std::pair<std::optional<Token>, std::optional<CompilationError>> result;
 		std::pair<int64_t, int64_t> pos;	// <line, column>
 		DFAState current_state = DFAState::INITIAL_STATE;
-		char peek = ' ';
 		
 		while (true) {
 			switch (current_state) {
@@ -97,20 +96,17 @@ namespace miniplc0 {
 						current_state = DFAState::EQUAL_SIGN_STATE;
 						break;
 					case '<':
-						current_state = DFAState::LESS_STATE;
+						current_state = DFAState::LESS_SIGN_STATE;
 						break;
 					case '>':
-						current_state = DFAState::GREATER_STATE;
+						current_state = DFAState::GREATER_SIGN_STATE;
 						break;
 					case '!':
-						current_state = DFAState::EXCLAM_STATE;
+						current_state = DFAState::EXCLAM_SIGN_STATE;
 						break;
 					case '/':
 						current_state = DFAState::DIVISION_SIGN_STATE;
 						break;
-                    case '\\':
-                        current_state = DFAState::ESCAPE_STATE;
-                        break;
 					case '\'':
 						current_state = DFAState::CHAR_STATE;
 						break;
@@ -120,7 +116,7 @@ namespace miniplc0 {
 					case ';':   case ',':
                     case '+':   case '-':   case '*':
 					case '(':   case ')':   case '{':   case '}':
-						current_state = DFAState::SINGLE_STATE;
+						current_state = DFAState::SINGLE_SIGN_STATE;
 						break;
 					// 不接受的字符导致的不合法的状态
 					default:
@@ -195,62 +191,133 @@ namespace miniplc0 {
 			}
 
 			case IDENTIFIER_STATE: {
-			    // will not get EOF
-                auto ch = current_char.value();
-                if (miniplc0::isdigit(ch) || miniplc0::isalpha(ch)) {
+                if (miniplc0::isdigit(peek) || miniplc0::isalpha(peek)) {
                     // 如果读到的是字符或字母，则存储读到的字符
-                    ss << ch;
+                    ss << peek;
+                    peek = nextChar();
                 } else {
-                    // 如果读到的字符不是上述情况之一，则回退读到的字符，并解析已经读到的字符串
-                    //     如果解析结果是关键字，那么返回对应关键字的token，否则返回标识符的token
-                    unreadLast();
-                    return std::make_pair(
-                            std::make_optional<Token>(idType(ss.str()), ss.str(), pos, currentPos()),
-                            std::optional<CompilationError>());
+                    return makeTk(idType(ss.str()), ss.str());
                 }
                 break;
 			}
 
-			case PLUS_SIGN_STATE: {
-				// 请思考这里为什么要回退，在其他地方会不会需要
-				unreadLast(); // Yes, we unread last char even if it's an EOF.
-				return std::make_pair(std::make_optional<Token>(TokenType::PLUS_SIGN, '+', pos, currentPos()), std::optional<CompilationError>());
-			}
-
-			case MINUS_SIGN_STATE: {
-				// 请填空：回退，并返回减号token
-                unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::MINUS_SIGN, '-', pos, currentPos()), std::optional<CompilationError>());
+            case EQUAL_SIGN_STATE: {
+                if (peek == '=') {
+                    peek = nextChar();
+                    return makeTk(TokenType::Z_SIGN, "==");
+                } else {
+                    return makeTk(TokenType::EQUAL_SIGN, '=');
+                }
             }
 
-			case MULTIPLICATION_SIGN_STATE: {
-                unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::MULTIPLICATION_SIGN, '*', pos, currentPos()), std::optional<CompilationError>());
+            case LESS_SIGN_STATE: {
+                if (peek == '=') {
+                    peek = nextChar();
+                    return makeTk(TokenType::LE_SIGN, "<=");
+                } else {
+                    return makeTk(TokenType::LT_SIGN, '<');
+                }
+            }
+
+            case GREATER_SIGN_STATE: {
+                if (peek == '=') {
+                    peek = nextChar();
+                    return makeTk(TokenType::GE_SIGN, ">=");
+                } else {
+                    return makeTk(TokenType::GT_SIGN, '>');
+                }
+            }
+
+            case EXCLAM_SIGN_STATE: {
+                if (peek == '=') {
+                    peek = nextChar();
+                    return makeTk(TokenType::NZ_SIGN, "!=");
+                } else {
+                    return makeCE(pos, ErrInvalidInput);
+                }
             }
 
 			case DIVISION_SIGN_STATE: {
-                unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::DIVISION_SIGN, '/', pos, currentPos()), std::optional<CompilationError>());
+//            *	->	multi comment
+//            /	->	single comment
+//            other	->	/
+                if (peek == '*') {
+                    current_state = DFAState::MULTI_COMMENT_STATE;
+                    peek = nextChar();
+                } else if (peek == '/') {
+                    current_state = DFAState::SINGLE_COMMENT_STATE;
+                    peek = nextChar();
+                } else {
+                    return makeTk(TokenType::DIVISION_SIGN, '/');
+                }
+                break;
             }
 
-			case EQUAL_SIGN_STATE: {
-                unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::EQUAL_SIGN, '=', pos, currentPos()), std::optional<CompilationError>());
+            case MULTI_COMMENT_STATE: {
+                if (peek == -1) {
+                    return makeCE(previousPos(), ErrIncompleteComment);
+                } else if (peek == '*') {
+                    peek = nextChar();
+                    if (peek == '/') {
+                        peek = nextChar();
+                        current_state = DFAState::INITIAL_STATE;
+                    }
+                } else {
+                    peek = nextChar();
+                }
+
+                break;
             }
 
-			case SEMICOLON_STATE: {
-                unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::SEMICOLON, ';', pos, currentPos()), std::optional<CompilationError>());
+            case SINGLE_COMMENT_STATE: {
+                if (peek == -1) {
+                    return std::make_pair(std::optional<Token>(), std::make_optional<CompilationError>(0, 0, ErrEOF));
+                } else if (peek == '\n') {
+                    current_state = DFAState::INITIAL_STATE;
+                }
+                peek = nextChar();
+
+                break;
             }
 
-			case LEFTBRACKET_STATE: {
-                unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::LEFT_PAREN, '(', pos, currentPos()), std::optional<CompilationError>());
+            case SINGLE_SIGN_STATE: {
+                char ch = ss.str()[0];
+                switch (ch) {
+                    case ';':
+                        return makeTk(TokenType::SEMICOLON, ';');
+                    case ',':
+                        return makeTk(TokenType::COMMA, ',');
+                    case '+':
+                        return makeTk(TokenType::PLUS_SIGN, '+');
+                    case '-':
+                        return makeTk(TokenType::MINUS_SIGN, '-');
+                    case '*':
+                        return makeTk(TokenType::MULTIPLICATION_SIGN, '*');
+                    case '(':
+                        return makeTk(TokenType::LEFT_PAREN, '(');
+                    case ')':
+                        return makeTk(TokenType::RIGHT_PAREN, ')');
+                    case '{':
+                        return makeTk(TokenType::LEFT_BRACE, '{');
+                    case '}':
+                        return makeTk(TokenType::RIGHT_BRACE, '}');
+
+                    default:
+                        DieAndPrint("wrong sign in single_sign_state.");
+                        break;
+                }
             }
 
-			case RIGHTBRACKET_STATE: {
-                unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::RIGHT_PAREN, ')', pos, currentPos()), std::optional<CompilationError>());
+            case CHAR_STATE: {
+
+            }
+
+            case STRING_STATE: {
+
+            }
+
+            case ESCAPE_STATE: {
+
             }
 
 			default:
