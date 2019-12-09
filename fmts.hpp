@@ -151,10 +151,10 @@ namespace fmt {
 			case miniplc0::SEMICOLON:
 				name = "Semicolon";
 				break;
-			case miniplc0::LEFT_BRACKET:
+			case miniplc0::LEFT_PAREN:
 				name = "LeftBracket";
 				break;
-			case miniplc0::RIGHT_BRACKET:
+			case miniplc0::RIGHT_PAREN:
 				name = "RightBracket";
 				break;
 			}

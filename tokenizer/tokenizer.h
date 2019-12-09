@@ -21,20 +21,23 @@ namespace miniplc0 {
 		// 状态机的所有状态
 		enum DFAState {
 			INITIAL_STATE,
+			ZERO_STATE,
 			UNSIGNED_INTEGER_STATE,
-			PLUS_SIGN_STATE,
-			MINUS_SIGN_STATE,
-			DIVISION_SIGN_STATE,
-			MULTIPLICATION_SIGN_STATE,
+			HEX_INTEGER_STATE,
 			IDENTIFIER_STATE,
 			EQUAL_SIGN_STATE,
-			SEMICOLON_STATE,
-			LEFTBRACKET_STATE,
-			RIGHTBRACKET_STATE
+			GREATER_STATE,
+			LESS_STATE,
+			EXCLAM_STATE,
+            DIVISION_SIGN_STATE,
+            ESCAPE_STATE,
+            CHAR_STATE,
+            STRING_STATE,
+			SINGLE_STATE
 		};
 	public:
 		Tokenizer(std::istream& ifs)
-			: _rdr(ifs), _initialized(false), _ptr(0, 0),_lines_buffer() {}
+			: _rdr(ifs), _initialized(false), _ptr(0, 0),_lines_buffer(), peek(' ') {}
 		Tokenizer(Tokenizer&& tkz) = delete;
 		Tokenizer(const Tokenizer&) = delete;
 		Tokenizer& operator=(const Tokenizer&) = delete;
@@ -44,11 +47,6 @@ namespace miniplc0 {
 		// 一次返回所有 token
 		std::pair<std::vector<Token>, std::optional<CompilationError>> AllTokens();
 	private:
-		// 检查 Token 的合法性
-		std::optional<CompilationError> checkToken(const Token&);
-		// 
-		// ** 你需要完成这个函数 **
-		//
 		// 返回下一个 token，是 NextToken 实际实现部分
 		std::pair<std::optional<Token>, std::optional<CompilationError>> nextToken();
 
@@ -61,24 +59,20 @@ namespace miniplc0 {
 
 		// 一次读入全部内容，并且替换所有换行为 \n
 		// 这样其实是不合理的，这里只是简单起见这么实现
+		void tkzInit();
+		void addReservedWord();
+        TokenType idType (const std::string& s);
+
 		void readAll();
-		// 一个简单的总结
-		// | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9  | 偏移
-		// | = | = | = | = | = | = | = | = | = | =  |
-		// | h | a | 1 | 9 | 2 | 6 | 0 | 8 | 1 | \n |（缓冲区第0行）
-		// | 7 | 1 | 1 | 4 | 5 | 1 | 4 |             （缓冲区第1行）
-		// 这里假设指针指向第一行的 \n，那么有
-		// nextPos() = (1, 0)
-		// currentPos() = (0, 9)
-		// previousPos() = (0, 8)
-		// nextChar() = '\n' 并且指针移动到 (1, 0)
-		// unreadLast() 指针移动到 (0, 8)
+		//todo: 一次读入一行缓存
+
+//		void readNextLine();
 		std::pair<uint64_t, uint64_t> nextPos();
 		std::pair<uint64_t, uint64_t> currentPos();
 		std::pair<uint64_t, uint64_t> previousPos();
-		std::optional<char> nextChar();
+		char nextChar();
 		bool isEOF();
-		void unreadLast();
+//		void unreadLast();
 	private:
 		std::istream& _rdr;
 		// 如果没有初始化，那么就 readAll
@@ -87,5 +81,6 @@ namespace miniplc0 {
 		std::pair<uint64_t, uint64_t> _ptr;
 		// 以行为基础的缓冲区
 		std::vector<std::string> _lines_buffer;
+		std::unordered_map<std::string, TokenType> _reservedWord;
 	};
 }

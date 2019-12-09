@@ -3,35 +3,41 @@
 #include <cctype>
 #include <sstream>
 
-namespace miniplc0 {
-    TokenType idType (const std::string& s) {
-        if (s == "begin")
-            return TokenType::BEGIN;
-        if (s == "end")
-            return TokenType::END;
-        if (s == "var")
-            return TokenType::VAR;
-        if (s == "const")
-            return TokenType::CONST;
-        if (s == "print")
-            return TokenType::PRINT;
+#define makeCE(pos, ErrCode) \
+    std::make_pair(\
+        std::optional<Token>(),\
+        std::make_optional<CompilationError>(pos, ErrCode))
 
-        return TokenType::IDENTIFIER;
+#define makeTk(type, value)\
+    std::make_pair(\
+        std::make_optional<Token>(type, value, pos, currentPos()),\
+        std::optional<CompilationError>())
+
+namespace miniplc0 {
+    TokenType Tokenizer::idType (const std::string& s) {
+        TokenType t;
+        try {
+            t = _reservedWord.at(s);
+        } catch (std::out_of_range& e) {
+            t = TokenType::IDENTIFIER;
+        }
+        return t;
     }
 
-    std::optional<int32_t> strToInt(const std::string& s) {
-        int32_t i;
+    std::optional<long> strToLong(const std::string& s) {
+        long ret;
         try {
-            i = std::stoi(s);
+            // auto choose base: dec or hex
+            ret = std::stoi(s, 0, 0);
         } catch (std::out_of_range& e) {
             return {};
         }
-        return i;
+        return ret;
     }
 
 	std::pair<std::optional<Token>, std::optional<CompilationError>> Tokenizer::NextToken() {
 		if (!_initialized)
-			readAll();
+			tkzInit();
 		if (_rdr.bad())
 			return std::make_pair(std::optional<Token>(), std::make_optional<CompilationError>(0, 0, ErrorCode::ErrStreamError));
 		if (isEOF())
@@ -39,9 +45,6 @@ namespace miniplc0 {
 		auto p = nextToken();
 		if (p.second.has_value())
 			return std::make_pair(p.first, p.second);
-		auto err = checkToken(p.first.value());
-		if (err.has_value())
-			return std::make_pair(p.first, err.value());
 		return std::make_pair(p.first, std::optional<CompilationError>());
 	}
 
@@ -65,57 +68,59 @@ namespace miniplc0 {
 		std::pair<std::optional<Token>, std::optional<CompilationError>> result;
 		std::pair<int64_t, int64_t> pos;	// <line, column>
 		DFAState current_state = DFAState::INITIAL_STATE;
+		char peek = ' ';
 		
 		while (true) {
-			// 读一个字符，请注意auto推导得出的类型是std::optional<char>
-			auto current_char = nextChar();
-
 			switch (current_state) {
 
 			case INITIAL_STATE: {
-				// if (isEOF()) return {};
-				if (!current_char.has_value())
-					// 返回一个空的token，和编译错误ErrEOF：遇到了文件尾
+				if (peek < 0)
+					// 遇到文件尾
 					return std::make_pair(std::optional<Token>(), std::make_optional<CompilationError>(0, 0, ErrEOF));
 
-				auto ch = current_char.value();
 				auto invalid = false;
 
 				// 使用了自己封装的判断字符类型的函数，定义于 tokenizer/utils.hpp
-				// see https://en.cppreference.com/w/cpp/string/byte/isblank
-				if (miniplc0::isspace(ch))
-					current_state = DFAState::INITIAL_STATE; // stay init
-				else if (!miniplc0::isprint(ch)) // control codes and backspace
-					invalid = true;
-				else if (miniplc0::isdigit(ch))
+				if (miniplc0::isblank(peek) || peek == '\n') {
+				    // 0x20 ' ', 0x09 '\t'
+				    peek = nextChar();
+                    break;
+				} else if (peek == '0')
+                    current_state = DFAState::ZERO_STATE;
+				else if (miniplc0::isdigit(peek))
 					current_state = DFAState::UNSIGNED_INTEGER_STATE;
-				else if (miniplc0::isalpha(ch))
+				else if (miniplc0::isalpha(peek))
 					current_state = DFAState::IDENTIFIER_STATE;
 				else {
-					switch (ch) {
+					switch (peek) {
 					case '=':
 						current_state = DFAState::EQUAL_SIGN_STATE;
 						break;
-					case '-':
-						current_state = DFAState::MINUS_SIGN_STATE;
+					case '<':
+						current_state = DFAState::LESS_STATE;
 						break;
-					case '+':
-						current_state = DFAState::PLUS_SIGN_STATE;
+					case '>':
+						current_state = DFAState::GREATER_STATE;
 						break;
-					case '*':
-						current_state = DFAState::MULTIPLICATION_SIGN_STATE;
+					case '!':
+						current_state = DFAState::EXCLAM_STATE;
 						break;
 					case '/':
 						current_state = DFAState::DIVISION_SIGN_STATE;
 						break;
-					case ';':
-						current_state = DFAState::SEMICOLON_STATE;
+                    case '\\':
+                        current_state = DFAState::ESCAPE_STATE;
+                        break;
+					case '\'':
+						current_state = DFAState::CHAR_STATE;
 						break;
-					case '(':
-						current_state = DFAState::LEFTBRACKET_STATE;
+					case '\"':
+						current_state = DFAState::STRING_STATE;
 						break;
-					case ')':
-						current_state = DFAState::RIGHTBRACKET_STATE;
+					case ';':   case ',':
+                    case '+':   case '-':   case '*':
+					case '(':   case ')':   case '{':   case '}':
+						current_state = DFAState::SINGLE_STATE;
 						break;
 					// 不接受的字符导致的不合法的状态
 					default:
@@ -123,50 +128,72 @@ namespace miniplc0 {
 						break;
 					}
 				}
-				// 如果读到的字符导致了状态的转移，说明它是一个token的第一个字符
-				if (current_state != DFAState::INITIAL_STATE)
-					pos = previousPos(); // 记录该字符的的位置为token的开始位置
-				// 读到了不合法的字符
-				if (invalid) {
-					unreadLast();
-					// 返回编译错误：非法的输入
-					return std::make_pair(std::optional<Token>(), std::make_optional<CompilationError>(pos, ErrorCode::ErrInvalidInput));
-				}
 
-                // ignore white spaces
+                // 读到了不合法的字符
+                if (invalid)
+                    return makeCE(previousPos(), ErrInvalidInput);
+
+                // 如果读到的字符导致了状态的转移，说明它是一个token的第一个字符
 				if (current_state != DFAState::INITIAL_STATE) {
+                    pos = previousPos(); // 记录该字符的的位置为token的开始位置
                     ss.str(std::string());
-                    ss << ch;
+                    ss << peek;
+                    peek = nextChar();
                 }
+
 				break;
 			}
+
+            case ZERO_STATE: {
+                if (peek == 'x' || peek == 'X') {
+                    current_state = DFAState::HEX_INTEGER_STATE;
+                    peek = nextChar();
+                } else if (miniplc0::isdigit(peek)) {
+                    return makeCE(pos, ErrInvalidNumberFormat);
+                } else if (miniplc0::isalpha(peek)) {
+                    return makeCE(pos, ErrInvalidIdentifier);
+                } else {
+                    return makeTk(TokenType::UNSIGNED_INTEGER, 0);
+                }
+                break;
+            }
 
 			case UNSIGNED_INTEGER_STATE: {
 				// will not get EOF
-				auto ch = current_char.value();
-				if (miniplc0::isdigit(ch)) {
+				if (miniplc0::isdigit(peek)) {
 				// 如果读到的字符是数字，则存储读到的字符
-					ss << ch;
-				} else if (miniplc0::isalpha(ch)) {
-				// 如果读到的是字母，返回编译错误 invalid identifier
-					return std::make_pair(
-					        std::optional<Token>(),
-					        std::make_optional<CompilationError>(pos, ErrInvalidIdentifier));
+					ss << peek;
+					peek = nextChar();
+				} else if (miniplc0::isalpha(peek)) {
+					return makeCE(pos, ErrInvalidIdentifier);
 				} else {
-				// 如果读到的字符不是上述情况之一，则回退读到的字符，将字符串解析为整数
-					unreadLast();
-					auto integer = strToInt(ss.str());
+				// 将字符串解析为整数
+					auto integer = strToLong(ss.str());
 					if (integer.has_value())
-                        return std::make_pair(
-                                std::make_optional<Token>(TokenType::UNSIGNED_INTEGER, integer.value(), pos, currentPos()),
-                                std::optional<CompilationError>());
+                        return makeTk(TokenType::UNSIGNED_INTEGER, integer.value());
 					else
-                        return std::make_pair(
-                                std::optional<Token>(),
-                                std::make_optional<CompilationError>(pos, ErrIntegerOverflow));
+                        return makeCE(pos, ErrIntegerOverflow);
 				}
 				break;
 			}
+
+			case HEX_INTEGER_STATE: {
+				if (miniplc0::isxdigit(peek)) {
+					ss << peek;
+					peek = nextChar();
+				} else if (miniplc0::isalpha(peek)) {
+					return makeCE(pos, ErrInvalidNumberFormat);
+				} else {
+				// 将字符串解析为整数
+					auto integer = strToLong(ss.str());
+					if (integer.has_value())
+                        return makeTk(TokenType::UNSIGNED_INTEGER, integer.value());
+					else
+                        return makeCE(pos, ErrIntegerOverflow);
+				}
+				break;
+			}
+
 			case IDENTIFIER_STATE: {
 			    // will not get EOF
                 auto ch = current_char.value();
@@ -218,12 +245,12 @@ namespace miniplc0 {
 
 			case LEFTBRACKET_STATE: {
                 unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::LEFT_BRACKET, '(', pos, currentPos()), std::optional<CompilationError>());
+                return std::make_pair(std::make_optional<Token>(TokenType::LEFT_PAREN, '(', pos, currentPos()), std::optional<CompilationError>());
             }
 
 			case RIGHTBRACKET_STATE: {
                 unreadLast();
-                return std::make_pair(std::make_optional<Token>(TokenType::RIGHT_BRACKET, ')', pos, currentPos()), std::optional<CompilationError>());
+                return std::make_pair(std::make_optional<Token>(TokenType::RIGHT_PAREN, ')', pos, currentPos()), std::optional<CompilationError>());
             }
 
 			default:
@@ -235,19 +262,10 @@ namespace miniplc0 {
 		return std::make_pair(std::optional<Token>(), std::optional<CompilationError>());
 	}
 
-	std::optional<CompilationError> Tokenizer::checkToken(const Token& t) {
-		switch (t.GetType()) {
-			case IDENTIFIER: {
-				auto val = t.GetValueString();
-				if (miniplc0::isdigit(val[0]))
-					return std::make_optional<CompilationError>(t.GetStartPos().first, t.GetStartPos().second, ErrorCode::ErrInvalidIdentifier);
-				break;
-			}
-		default:
-			break;
-		}
-		return {};
-	}
+	void Tokenizer::tkzInit() {
+        readAll();
+        addReservedWord();
+    }
 
 	void Tokenizer::readAll() {
 		if (_initialized)
@@ -259,6 +277,27 @@ namespace miniplc0 {
 		return;
 	}
 
+	void Tokenizer::addReservedWord() {
+        _reservedWord["const"] = TokenType::CONST;
+        _reservedWord["void"] = TokenType::VOID;
+        _reservedWord["int"] = TokenType::INT;
+        _reservedWord["char"] = TokenType::CHAR;
+        _reservedWord["double"] = TokenType::DOUBLE;
+        _reservedWord["struct"] = TokenType::STRUCT;
+        _reservedWord["if"] = TokenType::IF;
+        _reservedWord["else"] = TokenType::ELSE;
+        _reservedWord["switch"] = TokenType::SWITCH;
+        _reservedWord["case"] = TokenType::CASE;
+        _reservedWord["default"] = TokenType::DEFAULT;
+        _reservedWord["while"] = TokenType::WHILE;
+        _reservedWord["for"] = TokenType::FOR;
+        _reservedWord["do"] = TokenType::DO;
+        _reservedWord["return"] = TokenType::RETURN;
+        _reservedWord["break"] = TokenType::BREAK;
+        _reservedWord["continue"] = TokenType::CONTINUE;
+        _reservedWord["print"] = TokenType::PRINT;
+        _reservedWord["scan"] = TokenType::SCAN;
+    }
 	// Note: We allow this function to return a postion which is out of bound according to the design like std::vector::end().
 	std::pair<uint64_t, uint64_t> Tokenizer::nextPos() {
 		if (_ptr.first >= _lines_buffer.size())
@@ -282,10 +321,10 @@ namespace miniplc0 {
 			return std::make_pair(_ptr.first, _ptr.second - 1);
 	}
 
-	std::optional<char> Tokenizer::nextChar() {
+	char Tokenizer::nextChar() {
 		if (isEOF())
-			return {}; // EOF
-		auto result = _lines_buffer[_ptr.first][_ptr.second];
+            return -1;
+		char result = _lines_buffer[_ptr.first][_ptr.second];
 		_ptr = nextPos();
 		return result;
 	}
@@ -295,9 +334,9 @@ namespace miniplc0 {
 	}
 
 	// Note: Is it evil to unread a buffer?
-	void Tokenizer::unreadLast() {
-		_ptr = previousPos();
-	}
+//	void Tokenizer::unreadLast() {
+//		_ptr = previousPos();
+//	}
 
 
 }

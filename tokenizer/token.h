@@ -10,21 +10,37 @@ namespace miniplc0 {
 
 	enum TokenType {
 		NULL_TOKEN,
-		UNSIGNED_INTEGER,
+
 		IDENTIFIER,
-		BEGIN,
-		END,
-		VAR,
+		UNSIGNED_INTEGER,
+		UNSIGNED_CHAR,
+		STRING,
+
 		CONST,
-		PRINT,
-		PLUS_SIGN,
-		MINUS_SIGN,
+		VOID, INT, CHAR, DOUBLE,
+		STRUCT,
+		IF, ELSE,
+        SWITCH, CASE, DEFAULT,
+        WHILE, FOR, DO,
+        RETURN,
+        BREAK, CONTINUE,
+        PRINT, SCAN,
+
+        PLUS_SIGN,
+        MINUS_SIGN,
 		MULTIPLICATION_SIGN,
 		DIVISION_SIGN,
 		EQUAL_SIGN,
+		LT_SIGN, LE_SIGN,
+		GT_SIGN, GE_SIGN,
+		NZ_SIGN, Z_SIGN,
+
 		SEMICOLON,
-		LEFT_BRACKET,
-		RIGHT_BRACKET
+        COMMA,
+		LEFT_PAREN,
+		RIGHT_PAREN,
+        LEFT_BRACE,
+        RIGHT_BRACE
 	};
 
 	class Token final {
@@ -65,7 +81,7 @@ namespace miniplc0 {
 			}
 			catch (const std::bad_any_cast&) {}
 			try {
-				return std::to_string(std::any_cast<int32_t>(_value));
+				return std::to_string(std::any_cast<long>(_value));
 			}
 			catch (const std::bad_any_cast&) {
 				DieAndPrint("No suitable cast for token value.");

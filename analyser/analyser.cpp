@@ -296,7 +296,7 @@ namespace miniplc0 {
 
 		// '('
 		next = nextToken();
-		if (mismatchType(next, TokenType::LEFT_BRACKET))
+		if (mismatchType(next, TokenType::LEFT_PAREN))
 			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrInvalidPrint);
 
 		// <表达式>
@@ -306,7 +306,7 @@ namespace miniplc0 {
 
 		// ')'
 		next = nextToken();
-		if (mismatchType(next, TokenType::RIGHT_BRACKET))
+		if (mismatchType(next, TokenType::RIGHT_PAREN))
 			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrInvalidPrint);
 
 		// ';'
@@ -394,13 +394,13 @@ namespace miniplc0 {
                 _instructions.emplace_back(Operation::LIT, integer);
                 break;
 
-		    case TokenType::LEFT_BRACKET:
+		    case TokenType::LEFT_PAREN:
 		        err = analyseExpression();
 		        if (err.has_value())
                     return err;
 
 		        next = nextToken();
-		        if (mismatchType(next, TokenType::RIGHT_BRACKET))
+		        if (mismatchType(next, TokenType::RIGHT_PAREN))
                     return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
                 break;
 			// 这里和 <语句序列> 类似，需要根据预读结果调用不同的子程序

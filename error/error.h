@@ -23,6 +23,7 @@ namespace miniplc0 {
 		ErrEOF,
 		ErrInvalidInput,
 		ErrInvalidIdentifier,
+		ErrInvalidNumberFormat,
 		ErrIntegerOverflow, // int32_t overflow.
 		ErrNoBegin,
 		ErrNoEnd,
