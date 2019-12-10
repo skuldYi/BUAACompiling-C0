@@ -15,95 +15,29 @@ namespace miniplc0 {
 			return std::make_pair(_instructions, std::optional<CompilationError>());
 	}
 
-	// <程序> ::= 'begin'<主过程>'end'
+	// <C0-program> ::=
+    //    {<variable-declaration>}{<function-definition>}
 	std::optional<CompilationError> Analyser::analyseProgram() {
-		// 示例函数，示例如何调用子程序
-
-		// 'begin'
 		auto bg = nextToken();
-		// if (!bg.has_value() || bg.value().GetType() != TokenType::BEGIN)
-//		if (mismatchType(bg, TokenType::BEGIN))
-//			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoBegin);
-
 		// <主过程>
-		auto err = analyseMain();
+		auto err = analyseVariableDeclaration();
 		if (err.has_value())
 			return err;
 
-		// 'end'
-		auto ed = nextToken();
-		// if (!ed.has_value() || ed.value().GetType() != TokenType::END)
-//		if (mismatchType(ed, TokenType::END))
-//			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoEnd);
+		err = analyseFunctionDefinition();
+		if (err.has_value())
+			return err;
+
 		return {};
 	}
 
-	// <主过程> ::= <常量声明><变量声明><语句序列>
-	std::optional<CompilationError> Analyser::analyseMain() {
-		// <常量声明>
-        auto err = analyseConstantDeclaration();
-        if (err.has_value())
-            return err;
-
-		// <变量声明>
-        err = analyseVariableDeclaration();
-        if (err.has_value())
-            return err;
-
-		// <语句序列>
-        err = analyseStatementSequence();
-        if (err.has_value())
-            return err;
-	}
-
-	// <常量声明> ::= {<常量声明语句>}
-	// <常量声明语句> ::= 'const'<标识符>'='<常表达式>';'
-	std::optional<CompilationError> Analyser::analyseConstantDeclaration() {
-		// 常量声明语句可能有 0 或无数个
-		while (true) {
-			// 预读一个 token，不然不知道是否应该用 <常量声明> 推导
-			auto next = nextToken();
-			if (!next.has_value())
-				return {};
-			// 如果是 const 那么说明应该推导 <常量声明> 否则直接返回
-			if (next.value().GetType() != TokenType::CONST) {
-				unreadToken();
-				return {};
-			}
-
-			// <常量声明语句>
-			next = nextToken();
-			if (mismatchType(next, TokenType::IDENTIFIER))
-				return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNeedIdentifier);
-			if (isDeclared(next.value().GetValueString()))
-				return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrDuplicateDeclaration);
-			addConstant(next.value());
-
-			// '='
-			next = nextToken();
-			if (mismatchType(next, TokenType::ASSIGN_SIGN))
-				return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrConstantNeedValue);
-
-			// <常表达式>
-			int32_t val;
-			auto err = analyseConstantExpression(val);
-			if (err.has_value())
-				return err;
-
-			// ';'
-			next = nextToken();
-			if (mismatchType(next, TokenType::SEMICOLON))
-				return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoSemicolon);
-			// 生成一次 LIT 指令加载常量
-			_instructions.emplace_back(Operation::LIT, val);
-		}
-	}
-
-	// <变量声明> ::= {<变量声明语句>}
-	// <变量声明语句> ::= 'var'<标识符>['='<表达式>]';'
-	// 需要补全
+	// <variable-declaration> ::=
+    //    [<const-qualifier>]<type-specifier><init-declarator-list>';'
+    // <init-declarator-list> ::=
+    //    <init-declarator>{','<init-declarator>}
+    // <init-declarator> ::=
+    //    <identifier>['='<expression> ]
 	std::optional<CompilationError> Analyser::analyseVariableDeclaration() {
-		// 变量声明语句可能有 0 个或者多个
 		while (true) {
             // 预读
             auto next = nextToken();
@@ -152,30 +86,51 @@ namespace miniplc0 {
         }
 	}
 
-	// <语句序列> ::= {<语句>}
-	// <语句> :: = <赋值语句> | <输出语句> | <空语句>
-	// <赋值语句> :: = <标识符>'='<表达式>';'
-	// <输出语句> :: = 'print' '(' <表达式> ')' ';'
-	// <空语句> :: = ';'
-	// 需要补全
-	std::optional<CompilationError> Analyser::analyseStatementSequence() {
-		while (true) {
-			// 预读
-			auto next = nextToken();
-			if (!next.has_value())
-				return {};
-			unreadToken();
-			if (next.value().GetType() != TokenType::IDENTIFIER &&
-				next.value().GetType() != TokenType::PRINT &&
-				next.value().GetType() != TokenType::SEMICOLON) {
-				return {};
-				// 语句序列可以包含 0 个语句
-				// 如果没有语句直接返回，不报错
-			}
-			std::optional<CompilationError> err;
-			switch (next.value().GetType()) {
-				// 这里需要你针对不同的预读结果来调用不同的子程序
-				// 注意我们没有针对空语句单独声明一个函数，因此可以直接在这里返回
+
+	// <function-definition> ::=
+    //    <type-specifier><identifier><parameter-clause><compound-statement>
+    //
+    // <parameter-clause> ::=
+    //    '(' [<parameter-declaration-list>] ')'
+    // <parameter-declaration-list> ::=
+    //    <parameter-declaration>{','<parameter-declaration>}
+    // <parameter-declaration> ::=
+    //    [<const-qualifier>]<type-specifier><identifier>
+    std::optional<CompilationError> Analyser::analyseFunctionDefinition() {
+        return std::optional<CompilationError>();
+    }
+
+    // <compound-statement> ::=
+    //    '{' {<variable-declaration>} <statement-seq> '}'
+    std::optional<CompilationError> Analyser::analyseCompoundStatement() {
+        return std::optional<CompilationError>();
+    }
+
+
+    // <statement-seq> ::=
+    //	{<statement>}
+    //<statement> ::=
+    //     <compound-statement>|<condition-statement>|<loop-statement>
+    //     |<jump-statement>|<print-statement>|<scan-statement>
+    //    |<assignment-expression>';'|<function-call>';'|';'
+    std::optional<CompilationError> Analyser::analyseStatementSequence() {
+        while (true) {
+            // 预读
+            auto next = nextToken();
+            if (!next.has_value())
+                return {};
+            unreadToken();
+            if (next.value().GetType() != TokenType::IDENTIFIER &&
+                next.value().GetType() != TokenType::PRINT &&
+                next.value().GetType() != TokenType::SEMICOLON) {
+                return {};
+                // 语句序列可以包含 0 个语句
+                // 如果没有语句直接返回，不报错
+            }
+            std::optional<CompilationError> err;
+            switch (next.value().GetType()) {
+                // 这里需要你针对不同的预读结果来调用不同的子程序
+                // 注意我们没有针对空语句单独声明一个函数，因此可以直接在这里返回
                 case TokenType::IDENTIFIER:
                     err = analyseAssignmentStatement();
                     if (err.has_value())
@@ -183,7 +138,7 @@ namespace miniplc0 {
                     break;
 
                 case TokenType::PRINT:
-                    err = analyseOutputStatement();
+                    err = analysePrintStatement();
                     if (err.has_value())
                         return err;
                     break;
@@ -193,70 +148,71 @@ namespace miniplc0 {
                     nextToken();
                     break;
 
-				default:
-				break;
-			}
-		}
-	}
-
-	// <常表达式> ::= [<符号>]<无符号整数>
-	std::optional<CompilationError> Analyser::analyseConstantExpression(int32_t& out) {
-		// out 是常表达式的结果
-		// 注意以下均为常表达式：+1 -1 1
-		auto next = nextToken();
-		if (!next.has_value())
-            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
-
-        int32_t sign = 1;
-        if (next.value().GetType() == TokenType::MINUS_SIGN) {
-            sign = -1;
-            next = nextToken();
-        } else if (next.value().GetType() == TokenType::PLUS_SIGN) {
-            next = nextToken();
+                default:
+                    break;
+            }
         }
+    }
 
-        if (mismatchType(next, TokenType::UNSIGNED_INTEGER))
-            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
+    // <condition-statement> ::=
+    //     'if' '(' <condition> ')' <statement> ['else' <statement>]
+    //    |'switch' '(' <expression> ')' '{' {<labeled-statement>} '}'
+    std::optional<CompilationError> Analyser::analyseConditionStatement() {
+        return std::optional<CompilationError>();
+    }
 
-        // 无符号整数字面量的值必须在[0, 2^{31}-1]以内，不会溢出
-        out = std::any_cast<int32_t>(next.value().GetValue()) * sign;
-		return {};
-	}
+    std::optional<CompilationError> Analyser::analyseLoopStatement() {
+        return std::optional<CompilationError>();
+    }
 
-	// <表达式> ::= <项>{<加法型运算符><项>}
-	std::optional<CompilationError> Analyser::analyseExpression() {
-		// <项>
-		auto err = analyseItem();
-		if (err.has_value())
-			return err;
+    // <jump-statement> ::=     ('break'|'continue'|'return' [<expression>]) ';'
+    std::optional<CompilationError> Analyser::analyseJumpStatement() {
+        return std::optional<CompilationError>();
+    }
 
-		// {<加法型运算符><项>}
-		while (true) {
-			// 预读
-			auto next = nextToken();
-			if (!next.has_value())
-				return {};
-			auto type = next.value().GetType();
-			if (type != TokenType::PLUS_SIGN && type != TokenType::MINUS_SIGN) {
-				unreadToken();
-				return {};
-			}
+    // <print-statement> ::=
+    //    'print' '(' [<printable-list>] ')' ';'
+    //<printable-list>  ::=
+    //    <printable> {',' <printable>}
+    //<printable> ::=
+    //    <expression> | <string-literal>
+    std::optional<CompilationError> Analyser::analysePrintStatement() {
+        // 如果之前 <语句序列> 的实现正确，这里第一个 next 一定是 TokenType::PRINT
+        auto next = nextToken();
 
-			// <项>
-			err = analyseItem();
-			if (err.has_value())
-				return err;
+        // '('
+        next = nextToken();
+        if (mismatchType(next, TokenType::LEFT_PAREN))
+            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrInvalidPrint);
 
-			// 根据结果生成指令
-			if (type == TokenType::PLUS_SIGN)
-				_instructions.emplace_back(Operation::ADD, 0);
-			else if (type == TokenType::MINUS_SIGN)
-				_instructions.emplace_back(Operation::SUB, 0);
-		}
-	}
+        // <表达式>
+        auto err = analyseExpression();
+        if (err.has_value())
+            return err;
 
-	// <赋值语句> ::= <标识符>'='<表达式>';'
-	std::optional<CompilationError> Analyser::analyseAssignmentStatement() {
+        // ')'
+        next = nextToken();
+        if (mismatchType(next, TokenType::RIGHT_PAREN))
+            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrInvalidPrint);
+
+        // ';'
+        next = nextToken();
+        if (mismatchType(next, TokenType::SEMICOLON))
+            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoSemicolon);
+
+        // 生成相应的指令 WRT
+        _instructions.emplace_back(Operation::WRT, 0);
+        return {};
+    }
+
+    // <scan-statement> ::=
+    //    'scan' '(' <identifier> ')' ';'
+    std::optional<CompilationError> Analyser::analyseScanStatement() {
+        return std::optional<CompilationError>();
+    }
+
+    // <assignment-expression> ::= <identifier> '=' <expression>
+    std::optional<CompilationError> Analyser::analyseAssignmentStatement() {
         // 从语句序列处跳转，一定是标识符
         auto next = nextToken();
         std::string id = next.value().GetValueString();
@@ -286,41 +242,64 @@ namespace miniplc0 {
             initVariable(id);
         _instructions.emplace_back(Operation::STO, getIndex(id));
 
-		return {};
-	}
+        return {};
+    }
 
-	// <输出语句> ::= 'print' '(' <表达式> ')' ';'
-	std::optional<CompilationError> Analyser::analyseOutputStatement() {
-		// 如果之前 <语句序列> 的实现正确，这里第一个 next 一定是 TokenType::PRINT
-		auto next = nextToken();
+    // <function-call> ::=
+    //    <identifier> '(' [<expression-list>] ')'
+    std::optional<CompilationError> Analyser::analyseFunctionCall() {
+        return std::optional<CompilationError>();
+    }
 
-		// '('
-		next = nextToken();
-		if (mismatchType(next, TokenType::LEFT_PAREN))
-			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrInvalidPrint);
+    // <condition> ::=
+    //     <expression>[<relational-operator><expression>]
+    //
+    //<condition-statement> ::=
+    //     'if' '(' <condition> ')' <statement> ['else' <statement>]
+    //    |'switch' '(' <expression> ')' '{' {<labeled-statement>} '}'
+    //
+    //<labeled-statement> ::=
+    //     'case' (<integer-literal>|<char-literal>) ':' <statement>
+    //    |'default' ':' <statement>
+    std::optional<CompilationError> Analyser::analyseCondition() {
+        return std::optional<CompilationError>();
+    }
 
-		// <表达式>
-		auto err = analyseExpression();
+	// <expression> ::= <Term>{<additive-operator><Term>}
+	std::optional<CompilationError> Analyser::analyseExpression() {
+		// <项>
+		auto err = analyseTerm();
 		if (err.has_value())
 			return err;
 
-		// ')'
-		next = nextToken();
-		if (mismatchType(next, TokenType::RIGHT_PAREN))
-			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrInvalidPrint);
+		// {<加法型运算符><项>}
+		while (true) {
+			// 预读
+			auto next = nextToken();
+			if (!next.has_value())
+				return {};
+			auto type = next.value().GetType();
+			if (type != TokenType::PLUS_SIGN && type != TokenType::MINUS_SIGN) {
+				unreadToken();
+				return {};
+			}
 
-		// ';'
-		next = nextToken();
-		if (mismatchType(next, TokenType::SEMICOLON))
-			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoSemicolon);
+			// <项>
+			err = analyseTerm();
+			if (err.has_value())
+				return err;
 
-		// 生成相应的指令 WRT
-		_instructions.emplace_back(Operation::WRT, 0);
-		return {};
+			// 根据结果生成指令
+			if (type == TokenType::PLUS_SIGN)
+				_instructions.emplace_back(Operation::ADD, 0);
+			else if (type == TokenType::MINUS_SIGN)
+				_instructions.emplace_back(Operation::SUB, 0);
+		}
 	}
 
-	// <项> :: = <因子>{ <乘法型运算符><因子> }
-	std::optional<CompilationError> Analyser::analyseItem() {
+
+	// <Term> ::= <Factor>{<multiplicative-operator><Factor>}
+	std::optional<CompilationError> Analyser::analyseTerm() {
         // <因子>
         auto err = analyseFactor();
         if (err.has_value())
@@ -351,8 +330,7 @@ namespace miniplc0 {
         }
 	}
 
-	// <因子> ::= [<符号>]( <标识符> | <无符号整数> | '('<表达式>')' )
-	// 需要补全
+	// <Factor> ::= {'('<type-specifier>')'}[<unary-operator>]<primary-expression>
 	std::optional<CompilationError> Analyser::analyseFactor() {
 		// [<符号>]
 		auto next = nextToken();
@@ -414,6 +392,13 @@ namespace miniplc0 {
 			_instructions.emplace_back(Operation::SUB, 0);
 		return {};
 	}
+
+	// <primary-expression> ::=
+    //     '('<expression>')'|<identifier>
+    //     |<integer-literal>|<char-literal>|<function-call>
+    std::optional<CompilationError> Analyser::analysePrimaryExpression(int32_t &out) {
+        return std::optional<CompilationError>();
+    }
 
 	std::optional<Token> Analyser::nextToken() {
 		if (_offset == _tokens.size())

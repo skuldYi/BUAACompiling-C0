@@ -32,29 +32,25 @@ namespace miniplc0 {
 	private:
 		// 所有的递归子程序
 
-		// <程序>
 		std::optional<CompilationError> analyseProgram();
-		// <主过程>
-		std::optional<CompilationError> analyseMain();
-		// <常量声明>
-		std::optional<CompilationError> analyseConstantDeclaration();
-		// <变量声明>
 		std::optional<CompilationError> analyseVariableDeclaration();
-		// <语句序列>
+		std::optional<CompilationError> analyseFunctionDefinition();
+
+		std::optional<CompilationError> analyseCompoundStatement();
 		std::optional<CompilationError> analyseStatementSequence();
-		// <常表达式>
-		// 这里的 out 是常表达式的值
-		std::optional<CompilationError> analyseConstantExpression(int32_t& out);
-		// <表达式>
+        std::optional<CompilationError> analyseConditionStatement();
+        std::optional<CompilationError> analyseLoopStatement();
+        std::optional<CompilationError> analyseJumpStatement();
+        std::optional<CompilationError> analysePrintStatement();
+        std::optional<CompilationError> analyseScanStatement();
+        std::optional<CompilationError> analyseAssignmentStatement();
+        std::optional<CompilationError> analyseFunctionCall();
+
+		std::optional<CompilationError> analyseCondition();
 		std::optional<CompilationError> analyseExpression();
-		// <赋值语句>
-		std::optional<CompilationError> analyseAssignmentStatement();
-		// <输出语句>
-		std::optional<CompilationError> analyseOutputStatement();
-		// <项>
-		std::optional<CompilationError> analyseItem();
-		// <因子>
+		std::optional<CompilationError> analyseTerm();
 		std::optional<CompilationError> analyseFactor();
+        std::optional<CompilationError> analysePrimaryExpression(int32_t& out);
 
 		// Token 缓冲区相关操作
 
