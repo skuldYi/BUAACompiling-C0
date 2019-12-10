@@ -144,6 +144,7 @@ namespace miniplc0 {
             case ZERO_STATE: {
                 if (peek == 'x' || peek == 'X') {
                     current_state = DFAState::HEX_INTEGER_STATE;
+                    ss << 'x';
                     peek = nextChar();
                 } else if (miniplc0::isdigit(peek)) {
                     return makeCE(pos, ErrInvalidNumberFormat);
@@ -205,7 +206,7 @@ namespace miniplc0 {
             case EQUAL_SIGN_STATE: {
                 if (peek == '=') {
                     peek = nextChar();
-                    return makeTk(TokenType::EQUAL_SIGN, "==");
+                    return makeTk(TokenType::EQUAL_SIGN, std::string("=="));
                 } else {
                     return makeTk(TokenType::ASSIGN_SIGN, '=');
                 }
@@ -214,7 +215,7 @@ namespace miniplc0 {
             case LESS_SIGN_STATE: {
                 if (peek == '=') {
                     peek = nextChar();
-                    return makeTk(TokenType::LESSEQUAL_SIGN, "<=");
+                    return makeTk(TokenType::LESSEQUAL_SIGN, std::string("<="));
                 } else {
                     return makeTk(TokenType::LESS_SIGN, '<');
                 }
@@ -223,7 +224,7 @@ namespace miniplc0 {
             case GREATER_SIGN_STATE: {
                 if (peek == '=') {
                     peek = nextChar();
-                    return makeTk(TokenType::GREATEREQUAL_SIGN, ">=");
+                    return makeTk(TokenType::GREATEREQUAL_SIGN, std::string(">="));
                 } else {
                     return makeTk(TokenType::GREATER_SIGN, '>');
                 }
@@ -232,7 +233,7 @@ namespace miniplc0 {
             case EXCLAM_SIGN_STATE: {
                 if (peek == '=') {
                     peek = nextChar();
-                    return makeTk(TokenType::NOTEQUAL_SIGN, "!=");
+                    return makeTk(TokenType::NOTEQUAL_SIGN, std::string("!="));
                 } else {
                     return makeCE(pos, ErrInvalidInput);
                 }
