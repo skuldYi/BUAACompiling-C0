@@ -12,6 +12,27 @@
 #include <cstddef> // for std::size_t
 
 namespace miniplc0 {
+    enum symbolType {
+        Int,
+        String,
+        Double
+    };
+
+    struct symbol_struct {
+        std::string name;
+        int32_t stackIndex;
+        symbolType type;    // String for function
+        bool isConstant;
+        bool isInitialed;
+        int16_t functionTableIndex;     // -1 for nonfunction
+    };
+
+    struct function_struct {
+        int para_size;
+        int level;
+        symbolType returnType;
+        std::vector<std::map<symbolType, std::string>> paraSeq;
+    };
 
 	class Analyser final {
 	private:
@@ -22,7 +43,7 @@ namespace miniplc0 {
 	public:
 		Analyser(std::vector<Token> v)
 			: _tokens(std::move(v)), _offset(0), _instructions({}), _current_pos(0, 0),
-			_uninitialized_vars({}), _vars({}), _consts({}), _nextTokenIndex(0) {}
+			_symbols({}), _symbolTableSizes({}), _functions({}), _nextTokenIndex(0) {}
 		Analyser(Analyser&&) = delete;
 		Analyser(const Analyser&) = delete;
 		Analyser& operator=(Analyser) = delete;
@@ -52,46 +73,40 @@ namespace miniplc0 {
 		std::optional<CompilationError> analyseFactor();
         std::optional<CompilationError> analysePrimaryExpression(int32_t& out);
 
-		// Token 缓冲区相关操作
+		// Token 缓冲区
+        std::vector<Token> _tokens;
+        std::size_t _offset;
+        std::vector<Instruction> _instructions;
+        std::pair<uint64_t, uint64_t> _current_pos;
 
-		// 返回下一个 token
-		std::optional<Token> nextToken();
-		// 回退一个 token
+        std::optional<Token> nextToken();
 		void unreadToken();
 
-		// 下面是符号表相关操作
+		// 符号表
+        std::vector<struct symbol_struct> _symbols;
+        std::vector<int> _symbolTableSizes;
+        std::vector<struct function_struct> _functions;
 
-		// helper function
-		void _add(const Token&, std::map<std::string, int32_t>&);
-		// 添加变量、常量、未初始化的变量
-		void addVariable(const Token&);
-		void addConstant(const Token&);
-		void addUninitializedVariable(const Token&);
+		void _addVar(const Token&, symbolType type, bool isConst, bool isInit, int16_t funInd);
+		int _findSymbol(const std::string&);    // return index in symbol table
+
+		void addVariable(const Token&, symbolType);
+		void addConstant(const Token&, symbolType);
+		void addUninitializedVariable(const Token&, symbolType);
+		int addFunction(const Token&, symbolType);     // return function index
+        void addFuncPara(int funcId, const std::string &, symbolType);
+
+		void setSymbolTable();
+		void resetSymbolTable();
+
 		void initVariable(const std::string&);
-		// 是否被声明过
 		bool isDeclared(const std::string&);
-		// 是否是未初始化的变量
-		bool isUninitializedVariable(const std::string&);
-		// 是否是已初始化的变量
-		bool isInitializedVariable(const std::string&);
-		// 是否是常量
-		bool isConstant(const std::string&);
-		// 获得 {变量，常量} 在栈上的偏移
-		int32_t getIndex(const std::string&);
-	private:
-		std::vector<Token> _tokens;
-		std::size_t _offset;
-		std::vector<Instruction> _instructions;
-		std::pair<uint64_t, uint64_t> _current_pos;
+        bool isConstant(const std::string&);
+        bool isUninitializedVariable(const std::string &);
+        bool isFunction(const std::string&);
+        bool isLocal(const std::string &);
+		int32_t getStackIndex(const std::string&);
 
-		// 为了简单处理，我们直接把符号表耦合在语法分析里
-		// 变量                   示例
-		// _uninitialized_vars    var a;
-		// _vars                  var a=1;
-		// _consts                const a=1;
-		std::map<std::string, int32_t> _uninitialized_vars;
-		std::map<std::string, int32_t> _vars;
-		std::map<std::string, int32_t> _consts;
 		// 下一个 token 在栈的偏移
 		int32_t _nextTokenIndex;
 	};

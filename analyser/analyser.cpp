@@ -240,7 +240,7 @@ namespace miniplc0 {
 
         if (isUninitializedVariable(id))
             initVariable(id);
-        _instructions.emplace_back(Operation::STO, getIndex(id));
+        _instructions.emplace_back(Operation::STO, getStackIndex(id));
 
         return {};
     }
@@ -363,7 +363,7 @@ namespace miniplc0 {
                 if (isUninitializedVariable(next.value().GetValueString()))
                     return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNotInitialized);
 
-                index = getIndex(next.value().GetValueString());
+                index = getStackIndex(next.value().GetValueString());
                 _instructions.emplace_back(Operation::LOD, index);
                 break;
 
@@ -416,54 +416,97 @@ namespace miniplc0 {
 		_offset--;
 	}
 
-	void Analyser::_add(const Token& tk, std::map<std::string, int32_t>& mp) {
+	void Analyser::_addVar(const Token& tk, symbolType type, bool isConst, bool isInit, int16_t funInd) {
 		if (tk.GetType() != TokenType::IDENTIFIER)
 			DieAndPrint("only identifier can be added to the table.");
-		mp[tk.GetValueString()] = _nextTokenIndex;
+
+		struct symbol_struct symbol;
+		symbol.name = tk.GetValueString();
+		symbol.type = type;
+		symbol.isConstant = isConst;
+		symbol.isInitialed;
+		symbol.functionTableIndex = funInd;
+		symbol.stackIndex = _nextTokenIndex;
+
+        _symbols.push_back(symbol);
+
 		_nextTokenIndex++;
 	}
 
-	void Analyser::addVariable(const Token& tk) {
-		_add(tk, _vars);
-	}
-
-	void Analyser::addConstant(const Token& tk) {
-		_add(tk, _consts);
-	}
-
-	void Analyser::addUninitializedVariable(const Token& tk) {
-		_add(tk, _uninitialized_vars);
-	}
-
-	void Analyser::initVariable(const std::string & id) {
-	    if (!isUninitializedVariable(id))
-            DieAndPrint("only uninitialized variable can be initiated.");
-        auto offset = _uninitialized_vars[id];
-	    _uninitialized_vars.erase(id);
-	    _vars[id] = offset;
+    int Analyser::_findSymbol(const std::string & str) {
+	    auto begin = _symbols.begin();
+        for (auto it = _symbols.end() - 1; it >= begin; it--) {
+            if (it->name == str)
+                return std::distance(begin, it);
+        }
+        return -1;
     }
 
-	int32_t Analyser::getIndex(const std::string& s) {
-		if (_uninitialized_vars.find(s) != _uninitialized_vars.end())
-			return _uninitialized_vars[s];
-		else if (_vars.find(s) != _vars.end())
-			return _vars[s];
-		else
-			return _consts[s];
+	void Analyser::addVariable(const Token& tk, symbolType type) {
+        _addVar(tk, type, false, true, -1);
 	}
 
-	bool Analyser::isDeclared(const std::string& s) {
-		return isConstant(s) || isUninitializedVariable(s) || isInitializedVariable(s);
+	void Analyser::addConstant(const Token& tk, symbolType type) {
+        _addVar(tk, type, true, true, -1);
+    }
+
+	void Analyser::addUninitializedVariable(const Token& tk, symbolType type) {
+        _addVar(tk, type, false, false, -1);
+    }
+
+    int Analyser::addFunction(const Token & tk, symbolType type) {
+	    int16_t funInd = _functions.size();
+	    _addVar(tk, symbolType::String, true, true, funInd);
+
+	    struct function_struct function;
+	    function.level = 1;
+	    function.returnType = type;
+	    function.para_size = 0;
+	    _functions.push_back(function);
+
+        return funInd;
+    }
+
+    void Analyser::addFuncPara(int funcId, const std::string &name, symbolType type) {
+        _functions[funcId].paraSeq.emplace_back(type, name);
+        _functions[funcId].para_size++;
+    }
+
+    void Analyser::setSymbolTable() {
+        _symbolTableSizes.push_back(_symbols.size());
+    }
+
+    void Analyser::resetSymbolTable() {
+        int size = _symbolTableSizes.back();
+        _symbolTableSizes.pop_back();
+        _symbols.erase(_symbols.begin() + size, _symbols.end());
+    }
+
+    void Analyser::initVariable(const std::string & id) {
+	    _symbols[_findSymbol(id)].isInitialed = true;
+    }
+
+    bool Analyser::isDeclared(const std::string& s) {
+        return _findSymbol(s) > -1;
 	}
 
-	bool Analyser::isUninitializedVariable(const std::string& s) {
-		return _uninitialized_vars.find(s) != _uninitialized_vars.end();
-	}
-	bool Analyser::isInitializedVariable(const std::string&s) {
-		return _vars.find(s) != _vars.end();
-	}
+    bool Analyser::isConstant(const std::string&s) {
+        return !isFunction(s) && _symbols[_findSymbol(s)].isConstant;
+    }
 
-	bool Analyser::isConstant(const std::string&s) {
-		return _consts.find(s) != _consts.end();
-	}
+    bool Analyser::isUninitializedVariable(const std::string &s){
+        return !isFunction(s) && !_symbols[_findSymbol(s)].isInitialed;
+    }
+
+    bool Analyser::isFunction(const std::string &s) {
+        return _symbols[_findSymbol(s)].functionTableIndex > -1;
+    }
+
+    bool Analyser::isLocal(const std::string &s) {
+        return _findSymbol(s) >= _symbolTableSizes.back();
+    }
+
+    int32_t Analyser::getStackIndex(const std::string& id) {
+        return _symbols[_findSymbol(id)].stackIndex;
+    }
 }
