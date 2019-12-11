@@ -27,43 +27,16 @@
     |'return' |'break'  |'continue' 
     |'print'  |'scan'
 
-
-<char-liter> ::= 
-    "'" (<c-char>|<escape-seq>) "'" 
-<string-literal> ::= 
-    '"' {<s-char>|<escape-seq>} '"'
-<escape-seq> ::=  
-      '\\' | "\'" | '\"' | '\n' | '\r' | '\t'
-    | '\x'<hexadecimal-digit><hexadecimal-digit>
-
-    
-// <sign> ::= 
-//     '+'|'-'
-// <digit-seq> ::=
-//     <digit>{<digit>}
-// <floating-literal> ::= 
-//      [<digit-seq>]'.'<digit-seq>[<exponent>]
-//     |<digit-seq>'.'[<exponent>]
-//     |<digit-seq><exponent>
-// <exponent> ::= 
-//     ('e'|'E')[<sign>]<digit-seq>
-   
-    
 <unary-operator>          ::= '+' | '-'
 <additive-operator>       ::= '+' | '-'
 <multiplicative-operator> ::= '*' | '/'
 <relational-operator>     ::= '<' | '<=' | '>' | '>=' | '!=' | '=='
 <assignment-operator>     ::= '='   
 
-    
-<single-line-comment> ::=
-    '//'{<any-char>}<LF>
-<multi-line-comment> ::= 
-    '/*'{<any-char>}'*/'  
-    
+
     
 <type-specifier>         ::= <simple-type-specifier>
-<simple-type-specifier>  ::= 'void'|'int'|'char' //|'double'
+<simple-type-specifier>  ::= 'void'|'int'
 <const-qualifier>        ::= 'const'
     
     
@@ -76,7 +49,9 @@
 <init-declarator-list> ::= 
     <init-declarator>{','<init-declarator>}
 <init-declarator> ::= 
-    <identifier>['='<expression> ]
+    <identifier>[<initializer>]
+<initializer> ::= 
+    '='<expression>    
 
     
 <function-definition> ::= 
@@ -95,7 +70,7 @@
 <statement-seq> ::= 
 	{<statement>}
 <statement> ::= 
-     <compound-statement>
+     '{' <statement-seq> '}'
     |<condition-statement>
     |<loop-statement>
     |<jump-statement>
@@ -111,29 +86,14 @@
    
 <condition-statement> ::= 
      'if' '(' <condition> ')' <statement> ['else' <statement>]
-    // |'switch' '(' <expression> ')' '{' {<labeled-statement>} '}'
-
-// <labeled-statement> ::= 
-//      'case' (<integer-literal>|<char-literal>) ':' <statement>
-//     |'default' ':' <statement>
-
     
 <loop-statement> ::= 
     'while' '(' <condition> ')' <statement>
-   // |'do' <statement> 'while' '(' <condition> ')' ';'
-   // |'for' '('<for-init-statement> [<condition>]';' [<for-update-expression>]')' <statement>
-
-// <for-init-statement> ::= 
-//     [<assignment-expression>{','<assignment-expression>}]';'
-// <for-update-expression> ::=
-//     (<assignment-expression>|<function-call>){','(<assignment-expression>|<function-call>)}
-
 
 <jump-statement> ::= 
-    //  'break' ';'
-    // |'continue' ';'
-    |'return' [<expression>] ';'
-    
+    <return-statement>
+<return-statement> ::= 
+    'return' [<expression>] ';'
     
 <scan-statement> ::= 
     'scan' '(' <identifier> ')' ';'
@@ -142,26 +102,23 @@
 <printable-list>  ::= 
     <printable> {',' <printable>}
 <printable> ::= 
-    <expression> | <string-literal>
+    <expression>
 
 <assignment-expression> ::= 
-    <identifier> '=' <expression>
+    <identifier><assignment-operator><expression>
     
-   
-  
 <expression> ::= 
-    <Term>{<additive-operator><Term>}
-
-<Term> ::=
-     <Factor>{<multiplicative-operator><Factor>}
-<Factor> ::=
-    {'('<type-specifier>')'}[<unary-operator>]<primary-expression>
+    <additive-expression>
+<additive-expression> ::= 
+     <multiplicative-expression>{<additive-operator><multiplicative-expression>}
+<multiplicative-expression> ::= 
+     <unary-expression>{<multiplicative-operator><unary-expression>}
+<unary-expression> ::=
+    [<unary-operator>]<primary-expression>
 <primary-expression> ::=  
      '('<expression>')' 
     |<identifier>
     |<integer-literal>
-    |<char-literal>
-    // |<floating-literal>
     |<function-call>
 
 <function-call> ::= 
