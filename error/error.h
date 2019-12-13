@@ -10,8 +10,6 @@ namespace miniplc0 {
 	inline void DieAndPrint(std::string condition) {
 		std::cout << "Exception: " <<  condition << "\n";
 		std::cout << "The program should not reach here.\n";
-		std::cout << "Please check your program carefully.\n";
-		std::cout << "If you believe it's not your fault, please report this to TAs.\n";
 		std::abort();
 		// or *((int*)114514) = 19260817;
 	}
@@ -37,7 +35,9 @@ namespace miniplc0 {
 		ErrInvalidAssignment,
 		ErrInvalidPrint,
 		ErrIncompleteComment,
-		ErrInvalidCharacter
+		ErrInvalidCharacter,
+		ErrVoidVariable,
+        ErrNeedTypeSpecifier
 	};
 
 	class CompilationError final{

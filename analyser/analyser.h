@@ -3,6 +3,7 @@
 #include "error/error.h"
 #include "instruction/instruction.h"
 #include "tokenizer/token.h"
+#include "symbol.h"
 
 #include <vector>
 #include <optional>
@@ -12,26 +13,12 @@
 #include <cstddef> // for std::size_t
 
 namespace miniplc0 {
-    enum symbolType {
-        Int,
-        String,
-        Double
-    };
-
-    struct symbol_struct {
-        std::string name;
-        int32_t stackIndex;
-        symbolType type;    // String for function
-        bool isConstant;
-        bool isInitialed;
-        int16_t functionTableIndex;     // -1 for nonfunction
-    };
 
     struct function_struct {
         int para_size;
         int level;
-        symbolType returnType;
-        std::vector<std::map<symbolType, std::string>> paraSeq;
+        SymbolType returnType;
+        std::vector<std::pair<SymbolType, std::string>> paraSeq;
     };
 
 	class Analyser final {
@@ -50,6 +37,7 @@ namespace miniplc0 {
 
 		// 唯一接口
 		std::pair<std::vector<Instruction>, std::optional<CompilationError>> Analyse();
+
 	private:
 		// 所有的递归子程序
 
@@ -73,28 +61,31 @@ namespace miniplc0 {
 		std::optional<CompilationError> analyseFactor();
         std::optional<CompilationError> analysePrimaryExpression(int32_t& out);
 
+        bool isTypeSpecifier(const Token&);
+
 		// Token 缓冲区
         std::vector<Token> _tokens;
         std::size_t _offset;
         std::vector<Instruction> _instructions;
         std::pair<uint64_t, uint64_t> _current_pos;
+        std::optional<Token> peek;
 
         std::optional<Token> nextToken();
 		void unreadToken();
 
 		// 符号表
-        std::vector<struct symbol_struct> _symbols;
+        std::vector<Symbol> _symbols;
         std::vector<int> _symbolTableSizes;
         std::vector<struct function_struct> _functions;
 
-		void _addVar(const Token&, symbolType type, bool isConst, bool isInit, int16_t funInd);
+		void _addVar(const Token&, SymbolType type, bool isConst, bool isInit, int16_t funInd);
 		int _findSymbol(const std::string&);    // return index in symbol table
 
-		void addVariable(const Token&, symbolType);
-		void addConstant(const Token&, symbolType);
-		void addUninitializedVariable(const Token&, symbolType);
-		int addFunction(const Token&, symbolType);     // return function index
-        void addFuncPara(int funcId, const std::string &, symbolType);
+		void addVariable(const Token&, SymbolType);
+		void addConstant(const Token&, SymbolType);
+		void addUninitializedVariable(const Token&, SymbolType);
+		int addFunction(const Token&, SymbolType);     // return function index
+        void addFuncPara(int funcId, const std::string &, SymbolType);
 
 		void setSymbolTable();
 		void resetSymbolTable();

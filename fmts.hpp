@@ -72,6 +72,12 @@ namespace fmt {
 			case miniplc0::ErrInvalidPrint:
 				name = "The output statement is invalid.";
 				break;
+			case miniplc0::ErrVoidVariable:
+				name = "Variables can not be void.";
+				break;
+			case miniplc0::ErrNeedTypeSpecifier:
+				name = "Need an type specifier here.";
+				break;
 			}
 			return format_to(ctx.out(), name);
 		}

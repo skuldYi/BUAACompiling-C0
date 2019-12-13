@@ -16,6 +16,7 @@ set(lib_src
 	error/error.h
 	analyser/analyser.h
 	analyser/analyser.cpp
+	analyser/symbol.h
 	instruction/instruction.h
 )
 

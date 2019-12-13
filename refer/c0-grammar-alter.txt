@@ -62,8 +62,7 @@
     '/*'{<any-char>}'*/'  
     
     
-<type-specifier>         ::= <simple-type-specifier>
-<simple-type-specifier>  ::= 'void'|'int'|'char' //|'double'
+<type-specifier>         ::= 'void'|'int'|'char' //|'double'
 <const-qualifier>        ::= 'const'
     
     
