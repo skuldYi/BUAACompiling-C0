@@ -3,7 +3,7 @@
 #include "error/error.h"
 #include "instruction/instruction.h"
 #include "tokenizer/token.h"
-#include "symbol.h"
+#include "func.h"
 
 #include <vector>
 #include <optional>
@@ -13,14 +13,6 @@
 #include <cstddef> // for std::size_t
 
 namespace miniplc0 {
-
-    struct function_struct {
-        int para_size;
-        int level;
-        SymbolType returnType;
-        std::vector<std::pair<SymbolType, std::string>> paraSeq;
-    };
-
 	class Analyser final {
 	private:
 		using uint64_t = std::uint64_t;
@@ -45,7 +37,7 @@ namespace miniplc0 {
 		std::optional<CompilationError> analyseVariableDeclaration();
 		std::optional<CompilationError> analyseFunctionDefinition();
 
-		std::optional<CompilationError> analyseCompoundStatement();
+		std::optional<CompilationError> analyseCompoundStatement(bool funcBody);
         std::optional<CompilationError> analyseConditionStatement();
         std::optional<CompilationError> analyseLoopStatement();
         std::optional<CompilationError> analyseJumpStatement();
@@ -73,7 +65,7 @@ namespace miniplc0 {
 		// 符号表
         std::vector<Symbol> _symbols;
         std::vector<int> _symbolTableSizes;
-        std::vector<struct function_struct> _functions;
+        std::vector<Func> _functions;
 
 		void _addVar(const Token&, SymbolType type, bool isConst, bool isInit, int16_t funInd);
 		int _findSymbol(const std::string&);    // return index in symbol table
@@ -82,7 +74,7 @@ namespace miniplc0 {
 		void addConstant(const Token&, SymbolType);
 		void addUninitializedVariable(const Token&, SymbolType);
 		int addFunction(const Token&, SymbolType);     // return function index
-        void addFuncPara(int funcId, const std::string &, SymbolType);
+        void addFuncPara(int funcId, SymbolType);
 
 		void setSymbolTable();
 		void resetSymbolTable();

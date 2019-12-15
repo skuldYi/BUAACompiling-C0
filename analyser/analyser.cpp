@@ -182,10 +182,15 @@ namespace miniplc0 {
 
             if (mismatchType(peek, TokenType::IDENTIFIER))
                 return makeCE(ErrorCode::ErrNeedIdentifier);
+            auto id = peek.value();
             peek = nextToken();
 
-            if (mismatchType(peek, TokenType::LEFT_PAREN))
+            int funId = addFunction(id, type.value());
+            setSymbolTable();
+
+            if (mismatchType(peek, TokenType::LEFT_PAREN)) {
                 return makeCE(ErrorCode::ErrIncompleteExpression);
+            }
             peek = nextToken();
 
             if (mismatchType(peek, TokenType::RIGHT_PAREN)) {
@@ -199,15 +204,21 @@ namespace miniplc0 {
                         peek = nextToken();
                     }
 
-                    auto type = specifierType(peek);
+                    type = specifierType(peek);
                     if (!type.has_value())
                         return makeCE(ErrorCode::ErrNeedTypeSpecifier);
                     peek = nextToken();
 
                     if (mismatchType(peek, TokenType::IDENTIFIER))
                         return makeCE(ErrorCode::ErrNeedIdentifier);
-                    auto id = peek.value();
+                    id = peek.value();
                     peek = nextToken();
+
+                    addFuncPara(funId, type.value());
+                    if (isConst)
+                        addConstant(id, type.value());
+                    else
+                        addVariable(id, type.value());
 
                     if (mismatchType(peek, TokenType::COMMA))
                         break;
@@ -221,7 +232,7 @@ namespace miniplc0 {
             }
             peek = nextToken();
 
-            auto err = analyseCompoundStatement();
+            auto err = analyseCompoundStatement(true);
             if (err.has_value())
                 return err;
         }
@@ -239,14 +250,15 @@ namespace miniplc0 {
     //    |<assignment-expression>';' // <id> '='
     //    |<function-call>';'     // <id> '('
     //    |';'
-    std::optional<CompilationError> Analyser::analyseCompoundStatement() {
+    std::optional<CompilationError> Analyser::analyseCompoundStatement(bool funcBody) {
         debugOut("analyse compound statement");
 
         if (mismatchType(peek, TokenType::LEFT_BRACE))
             return makeCE(ErrorCode::ErrMissingBrace);
         peek = nextToken();
 
-        setSymbolTable();
+        if (!funcBody)
+            setSymbolTable();
         auto err = analyseVariableDeclaration();
         if (err.has_value())
             return err;
@@ -262,7 +274,7 @@ namespace miniplc0 {
 
             switch (peek.value().GetType()) {
                 case TokenType::LEFT_BRACE:
-                    err = analyseCompoundStatement();
+                    err = analyseCompoundStatement(false);
                     break;
 
                 case TokenType::IF:
@@ -602,19 +614,13 @@ namespace miniplc0 {
     int Analyser::addFunction(const Token & tk, SymbolType type) {
 	    int16_t funInd = _functions.size();
 	    _addVar(tk, SymbolType::String, true, true, funInd);
-
-	    struct function_struct function;
-	    function.level = 1;
-	    function.returnType = type;
-	    function.para_size = 0;
-	    _functions.push_back(function);
+	    _functions.emplace_back(type);
 
         return funInd;
     }
 
-    void Analyser::addFuncPara(int funcId, const std::string &name, SymbolType type) {
-        _functions[funcId].paraSeq.emplace_back(type, name);
-        _functions[funcId].para_size++;
+    void Analyser::addFuncPara(int funcId, SymbolType type) {
+        _functions[funcId].addPara(type);
     }
 
     void Analyser::setSymbolTable() {

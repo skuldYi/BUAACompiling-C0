@@ -17,6 +17,7 @@ set(lib_src
 	analyser/analyser.h
 	analyser/analyser.cpp
 	analyser/symbol.h
+	analyser/func.h
 	instruction/instruction.h
 )
 
