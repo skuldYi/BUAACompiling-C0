@@ -150,14 +150,15 @@
 <Term> ::=
      <Factor>{<multiplicative-operator><Factor>}
 <Factor> ::=
-    {'('<type-specifier>')'}[<unary-operator>]<primary-expression>
+    // {'('<type-specifier>')'}[<unary-operator>]<primary-expression>
+    [<unary-operator>]<primary-expression>
 <primary-expression> ::=  
      '('<expression>')' 
     |<identifier>
+    |<function-call>    // <id>
     |<integer-literal>
     |<char-literal>
     // |<floating-literal>
-    |<function-call>
 
 <function-call> ::= 
     <identifier> '(' [<expression-list>] ')'

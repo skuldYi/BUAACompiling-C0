@@ -321,7 +321,8 @@ namespace miniplc0 {
                 if (!err.has_value()) {
                     if (mismatchType(peek, TokenType::SEMICOLON))
                         err = makeCE(ErrorCode::ErrNoSemicolon);
-                    peek = nextToken();
+                    else
+                        peek = nextToken(); // avoid nextToken after EOF
                 }
 
                 break;
@@ -612,142 +613,150 @@ namespace miniplc0 {
         return std::optional<CompilationError>();
     }
 
-	// <expression> ::= <Term>{<additive-operator><Term>}
+	// <Term>{<additive-operator><Term>}
 	std::optional<CompilationError> Analyser::analyseExpression() {
-        peek = nextToken();
-        return {};
-//		// <项>
-//		auto err = analyseTerm();
-//		if (err.has_value())
-//			return err;
-//
-//		// {<加法型运算符><项>}
-//		while (true) {
-//			// 预读
-//			auto next = nextToken();
-//			if (!next.has_value())
-//				return {};
-//			auto type = next.value().GetType();
-//			if (type != TokenType::PLUS_SIGN && type != TokenType::MINUS_SIGN) {
-//				unreadToken();
-//				return {};
-//			}
-//
-//			// <项>
-//			err = analyseTerm();
-//			if (err.has_value())
-//				return err;
-//
-//			// 根据结果生成指令
+        debugOut("Expression");
+
+        auto err = analyseTerm();
+		if (err.has_value())
+			return err;
+
+		while (!mismatchType(peek, TokenType::PLUS_SIGN)
+		    || !mismatchType(peek, TokenType::MINUS_SIGN)) {
+
+			auto type = peek.value().GetType();
+			peek = nextToken();
+
+			err = analyseTerm();
+			if (err.has_value())
+				return err;
+
 //			if (type == TokenType::PLUS_SIGN)
 //				_instructions.emplace_back(Operation::ADD, 0);
 //			else if (type == TokenType::MINUS_SIGN)
 //				_instructions.emplace_back(Operation::SUB, 0);
-//		}
+		}
+
+        return {};
 	}
 
-
-	// <Term> ::= <Factor>{<multiplicative-operator><Factor>}
+	// <Factor>{<multiplicative-operator><Factor>}
 	std::optional<CompilationError> Analyser::analyseTerm() {
-        // <因子>
+        debugOut("Term");
+
         auto err = analyseFactor();
         if (err.has_value())
             return err;
 
-        // {<乘法型运算符><因子>}
-        while (true) {
-            // 预读
-            auto next = nextToken();
-            if (!next.has_value())
-                return {};
-            auto type = next.value().GetType();
-            if (type != TokenType::MULTIPLICATION_SIGN && type != TokenType::DIVISION_SIGN) {
-                unreadToken();
-                return {};
-            }
+        while (!mismatchType(peek, TokenType::MULTIPLICATION_SIGN)
+            || !mismatchType(peek, TokenType::DIVISION_SIGN)) {
 
-            // <因子>
-            err = analyseFactor();
+            auto type = peek.value().GetType();
+            peek = nextToken();
+
+            err = analyseTerm();
             if (err.has_value())
                 return err;
 
-            // 根据结果生成指令
-            if (type == TokenType::MULTIPLICATION_SIGN)
-                _instructions.emplace_back(Operation::MUL, 0);
-            else if (type == TokenType::DIVISION_SIGN)
-                _instructions.emplace_back(Operation::DIV, 0);
+//            if (type == TokenType::MULTIPLICATION_SIGN)
+//                _instructions.emplace_back(Operation::MUL, 0);
+//            else if (type == TokenType::DIVISION_SIGN)
+//                _instructions.emplace_back(Operation::DIV, 0);
         }
+
+        return {};
 	}
 
-	// <Factor> ::= {'('<type-specifier>')'}[<unary-operator>]<primary-expression>
+	// <Factor> ::= [<unary-operator>]
+    //     '('<expression>')'
+    //    |<identifier>
+    //    |<integer-literal>
+    //    |<char-literal>
+    //    |<function-call>
 	std::optional<CompilationError> Analyser::analyseFactor() {
-		// [<符号>]
-		auto next = nextToken();
-		auto prefix = 1;
-		if (!next.has_value())
-			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
-		if (next.value().GetType() == TokenType::PLUS_SIGN)
-			prefix = 1;
-		else if (next.value().GetType() == TokenType::MINUS_SIGN) {
+        debugOut("Factor");
+
+        if (!peek.has_value())
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        auto prefix = 1;
+
+        if (peek.value().GetType() == TokenType::PLUS_SIGN) {
+            prefix = 1;
+            peek = nextToken();
+        } else if (peek.value().GetType() == TokenType::MINUS_SIGN) {
 			prefix = -1;
-			_instructions.emplace_back(Operation::LIT, 0);
+			peek = nextToken();
 		}
-		else
-			unreadToken();
 
-		// 预读
-		next = nextToken();
-		if (!next.has_value())
-			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
+        if (!peek.has_value())
+            return makeCE(ErrorCode::ErrIncompleteExpression);
 
-		int32_t index, integer;
 		std::optional<CompilationError> err;
-		switch (next.value().GetType()) {
+		std::string id;
+		long l;
+		int i;
+		auto next = peek;
+
+		switch (peek.value().GetType()) {
+            case TokenType::LEFT_PAREN:
+                peek = nextToken();
+                err = analyseExpression();
+                if (!err.has_value()) {
+                    if (mismatchType(peek, TokenType::RIGHT_PAREN))
+                        err = makeCE(ErrorCode::ErrIncompleteExpression);
+                    else
+                        peek = nextToken(); // avoid nextToken after EOF
+                }
+                break;
+
             case TokenType::IDENTIFIER:
-                // 未定义的变量不能参与表达式的运算
-                if (!isDeclared(next.value().GetValueString()))
-                    return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNotDeclared);
+                next = nextToken();
+                if (!mismatchType(next, TokenType::LEFT_PAREN)) {
+                    unreadToken();
+                    err = analyseFunctionCall();
+                } else {
+                    id = peek.value().GetValueString();
+                    peek = next;
 
-                // 未初始化的变量不能参与表达式的运算
-                if (isUninitializedVariable(next.value().GetValueString()))
-                    return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNotInitialized);
-
-                index = getStackIndex(next.value().GetValueString());
-                _instructions.emplace_back(Operation::LOD, index);
+                    if (!isDeclared(id))
+                        err = makeCE(ErrorCode::ErrNotDeclared);
+                    else if (isFunction(id))
+                        err = makeCE(ErrorCode::ErrInvalidFunctionCall);
+                    else if (isUninitializedVariable(id))
+                        err = makeCE(ErrorCode::ErrNotInitialized);
+                    else {
+//                        index = getStackIndex(next.value().GetValueString());
+//                        _instructions.emplace_back(Operation::LOD, index);
+                    }
+                }
                 break;
 
 		    case TokenType::UNSIGNED_INTEGER:
-		        integer = std::any_cast<int32_t>(next.value().GetValue());
-                _instructions.emplace_back(Operation::LIT, integer);
+		        l = std::any_cast<unsigned long>(peek.value().GetValue());
+		        if (l - 1 > INT32_MAX || (l - 1 == INT32_MAX && prefix == 1))
+		            err = makeCE(ErrorCode::ErrIntegerOverflow);
+//                _instructions.emplace_back(Operation::LIT, integer);
+
+		        peek = nextToken();
                 break;
 
-		    case TokenType::LEFT_PAREN:
-		        err = analyseExpression();
-		        if (err.has_value())
-                    return err;
-
-		        next = nextToken();
-		        if (mismatchType(next, TokenType::RIGHT_PAREN))
-                    return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
+            case TokenType::UNSIGNED_CHAR:
+                i = (int)std::any_cast<char>(peek.value().GetValue());
+                // do something
+                peek = nextToken();
                 break;
-			// 这里和 <语句序列> 类似，需要根据预读结果调用不同的子程序
-			// 但是要注意 default 返回的是一个编译错误
-		default:
-			return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
+
+            default:
+                err = makeCE(ErrorCode::ErrIncompleteExpression);
 		}
+		if (err.has_value())
+            return err;
 
-		// 取负
-		if (prefix == -1)
-			_instructions.emplace_back(Operation::SUB, 0);
+		if (prefix == -1) {
+//			_instructions.emplace_back(Operation::SUB, 0);
+        }
 		return {};
 	}
-
-	// <primary-expression> ::=
-    //     '('<expression>')'|<identifier>
-    //     |<integer-literal>|<char-literal>|<function-call>
-    std::optional<CompilationError> Analyser::analysePrimaryExpression(int32_t &out) {
-        return std::optional<CompilationError>();
-    }
 
     std::optional<Token> Analyser::nextToken() {
 		if (_offset == _tokens.size())

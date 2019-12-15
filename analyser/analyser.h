@@ -39,6 +39,7 @@ namespace miniplc0 {
 
 		std::optional<CompilationError> analyseStatement();
 		std::optional<CompilationError> analyseCompoundStatement(bool funcBody);
+        std::optional<CompilationError> analyseCondition();
         std::optional<CompilationError> analyseConditionStatement();
         std::optional<CompilationError> analyseLoopStatement();
         std::optional<CompilationError> analyseJumpStatement();
@@ -47,11 +48,9 @@ namespace miniplc0 {
         std::optional<CompilationError> analyseAssignmentStatement();
         std::optional<CompilationError> analyseFunctionCall();
 
-		std::optional<CompilationError> analyseCondition();
-		std::optional<CompilationError> analyseExpression();
+        std::optional<CompilationError> analyseExpression();
 		std::optional<CompilationError> analyseTerm();
 		std::optional<CompilationError> analyseFactor();
-        std::optional<CompilationError> analysePrimaryExpression(int32_t& out);
 
 		// Token 缓冲区
         std::vector<Token> _tokens;
