@@ -78,6 +78,12 @@ namespace fmt {
 			case miniplc0::ErrNeedTypeSpecifier:
 				name = "Need an type specifier here.";
 				break;
+			case miniplc0::ErrMissingBrace:
+				name = "Need an brace here.";
+				break;
+			case miniplc0::ErrSyntaxError:
+				name = "Encounter syntax mistake.";
+				break;
 			}
 			return format_to(ctx.out(), name);
 		}

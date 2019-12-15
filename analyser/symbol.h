@@ -6,9 +6,11 @@
 
 namespace miniplc0 {
     enum SymbolType {
+        Char,
         Int,
         String,
-        Double
+        Double,
+        Void
     };
 
     class Symbol final {
@@ -39,6 +41,9 @@ namespace miniplc0 {
         std::string toString() {
             char type = ' ';
             switch (_type) {
+                case Char:
+                    type = 'C';
+                    break;
                 case Int:
                     type = 'I';
                     break;
@@ -47,6 +52,9 @@ namespace miniplc0 {
                     break;
                 case Double:
                     type = 'D';
+                    break;
+                case Void:
+                    type = 'V';
                     break;
             }
             std::stringstream ss;

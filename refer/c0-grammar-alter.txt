@@ -79,10 +79,8 @@
 
     
 <function-definition> ::= 
-    <type-specifier><identifier><parameter-clause><compound-statement>
+    <type-specifier><identifier>'(' [<parameter-declaration-list>] ')' <compound-statement>
 
-<parameter-clause> ::= 
-    '(' [<parameter-declaration-list>] ')'
 <parameter-declaration-list> ::= 
     <parameter-declaration>{','<parameter-declaration>}
 <parameter-declaration> ::= 
@@ -90,18 +88,16 @@
 
     
 <compound-statement> ::= 
-    '{' {<variable-declaration>} <statement-seq> '}'
-<statement-seq> ::= 
-	{<statement>}
+    '{' {<variable-declaration>} {<statement>} '}'
 <statement> ::= 
-     <compound-statement>
-    |<condition-statement>
-    |<loop-statement>
-    |<jump-statement>
-    |<print-statement>
-    |<scan-statement>
-    |<assignment-expression>';'
-    |<function-call>';'
+     <compound-statement>   // {
+    |<condition-statement>  // if
+    |<loop-statement>       // while
+    |<jump-statement>       // return
+    |<print-statement>      // print
+    |<scan-statement>       // scan
+    |<assignment-expression>';' // <id> '='
+    |<function-call>';'     // <id> '('
     |';'   
     
     
