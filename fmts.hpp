@@ -73,16 +73,25 @@ namespace fmt {
 				name = "The output statement is invalid.";
 				break;
 			case miniplc0::ErrVoidVariable:
-				name = "Variables can not be void.";
+				name = "Variables or parameter can not be void.";
 				break;
 			case miniplc0::ErrNeedTypeSpecifier:
-				name = "Need an type specifier here.";
+				name = "Need a type specifier here.";
+				break;
+			case miniplc0::ErrNeedStatement:
+				name = "Need a statement here.";
 				break;
 			case miniplc0::ErrMissingBrace:
 				name = "Need an brace here.";
 				break;
 			case miniplc0::ErrSyntaxError:
 				name = "Encounter syntax mistake.";
+				break;
+			case miniplc0::ErrInvalidFunctionCall:
+				name = "Wrong argument number or type to function call.";
+				break;
+			case miniplc0::ErrFunctionNotDefined:
+				name = "Function must be defined before being called.";
 				break;
 			}
 			return format_to(ctx.out(), name);

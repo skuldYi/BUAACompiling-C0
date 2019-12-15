@@ -31,6 +31,13 @@ namespace miniplc0 {
                 _paraSize++;
         }
 
+        int getParaSize() const {
+            return _paraSize;
+        }
+
+        SymbolType getReturnType() const {
+            return _returnType;
+        }
 
     private:
         int _paraSize;

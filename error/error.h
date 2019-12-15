@@ -38,8 +38,11 @@ namespace miniplc0 {
 		ErrInvalidCharacter,
 		ErrVoidVariable,
         ErrNeedTypeSpecifier,
+        ErrNeedStatement,
         ErrMissingBrace,
-        ErrSyntaxError
+        ErrSyntaxError,
+        ErrFunctionNotDefined,
+        ErrInvalidFunctionCall
     };
 
 	class CompilationError final{

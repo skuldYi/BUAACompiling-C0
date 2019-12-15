@@ -33,11 +33,23 @@ namespace miniplc0 {
         return type;
     }
 
-    bool isStatementFirst(const Token& tk) {
-        TokenType type = tk.GetType();
+    bool isStatementFirst(const std::optional<Token>& tk) {
+        if (!tk.has_value())
+            return false;
+        TokenType type = tk.value().GetType();
         return   type == TokenType::LEFT_BRACE || type == TokenType::IF  || type == TokenType::WHILE
               || type == TokenType::RETURN  || type == TokenType::PRINT  || type == TokenType::SCAN
               || type == TokenType::IDENTIFIER  || type == TokenType::SEMICOLON;
+    }
+
+    // '<' | '<=' | '>' | '>=' | '!=' | '=='
+    bool isRelOpr(const std::optional<Token>& tk) {
+        if (!tk.has_value())
+            return false;
+        TokenType type = tk.value().GetType();
+        return   type == TokenType::LESS_SIGN || type == TokenType::LESSEQUAL_SIGN
+              || type == TokenType::GREATER_SIGN  || type == TokenType::GREATEREQUAL_SIGN
+              || type == TokenType::EQUAL_SIGN  || type == TokenType::NOTEQUAL_SIGN;
     }
 
 	std::pair<std::vector<Instruction>, std::optional<CompilationError>> Analyser::Analyse() {
@@ -78,8 +90,7 @@ namespace miniplc0 {
 
     std::optional<CompilationError> Analyser::analyseVariableDeclaration() {
 		while (true) {
-		    if (!peek.has_value() || isStatementFirst(peek.value())
-		        || !mismatchType(peek, TokenType::RIGHT_BRACE))
+		    if (isStatementFirst(peek) || !mismatchType(peek, TokenType::RIGHT_BRACE))
                 return {};
 
             debugOut("analyse var declaration");
@@ -185,8 +196,12 @@ namespace miniplc0 {
             auto id = peek.value();
             peek = nextToken();
 
+            // 函数名的作用域是其被声明的作用域
+            // 函数的参数名或局部变量名作用域是函数体内部
             int funId = addFunction(id, type.value());
             setSymbolTable();
+            // symbol table will be reset in analyse compound statement
+
 
             if (mismatchType(peek, TokenType::LEFT_PAREN)) {
                 return makeCE(ErrorCode::ErrIncompleteExpression);
@@ -207,6 +222,8 @@ namespace miniplc0 {
                     type = specifierType(peek);
                     if (!type.has_value())
                         return makeCE(ErrorCode::ErrNeedTypeSpecifier);
+                    if (type.value() == SymbolType::Void)
+                        return makeCE(ErrorCode::ErrVoidVariable);
                     peek = nextToken();
 
                     if (mismatchType(peek, TokenType::IDENTIFIER))
@@ -236,10 +253,10 @@ namespace miniplc0 {
             if (err.has_value())
                 return err;
         }
+
+        // todo: 不能在返回类型为`void`的函数中使用有值的返回语句，也不能在非`void`函数中使用无值的返回语句。
     }
 
-    // <compound-statement> ::=
-    //    '{' {<variable-declaration>} {<statement>} '}'
     // <statement> ::=
     //     <compound-statement>   // {
     //    |<condition-statement>  // if
@@ -250,74 +267,90 @@ namespace miniplc0 {
     //    |<assignment-expression>';' // <id> '='
     //    |<function-call>';'     // <id> '('
     //    |';'
+    std::optional<CompilationError> Analyser::analyseStatement(){
+        if (!isStatementFirst(peek))
+            return makeCE(ErrorCode::ErrNeedStatement);
+
+//        debugOut("analyse statement");
+
+        std::optional<CompilationError> err = {};
+        auto next = peek;   // get token type
+
+        // wrong peek will not reach here
+        switch (peek.value().GetType()) {
+            case TokenType::LEFT_BRACE:
+                err = analyseCompoundStatement(false);
+                break;
+
+            case TokenType::IF:
+                err = analyseConditionStatement();
+                break;
+
+            case TokenType::WHILE:
+                err = analyseLoopStatement();
+                break;
+
+            case TokenType::RETURN:
+                err = analyseJumpStatement();
+                break;
+
+            case TokenType::PRINT:
+                err = analysePrintStatement();
+                break;
+
+            case TokenType::SCAN:
+                err = analyseScanStatement();
+                break;
+
+            case TokenType::SEMICOLON:
+                peek = nextToken();
+                break;
+
+            case TokenType::IDENTIFIER:
+                next = nextToken();
+                unreadToken();
+                if (!next.has_value())
+                    err = makeCE(ErrorCode::ErrIncompleteExpression);
+                else if (next.value().GetType() == TokenType::ASSIGN_SIGN)
+                    err = analyseAssignmentStatement();
+                else if (next.value().GetType() == TokenType::LEFT_PAREN)
+                    err = analyseFunctionCall();
+                else
+                    err = makeCE(ErrorCode::ErrSyntaxError);
+
+                if (!err.has_value()) {
+                    if (mismatchType(peek, TokenType::SEMICOLON))
+                        err = makeCE(ErrorCode::ErrNoSemicolon);
+                    peek = nextToken();
+                }
+
+                break;
+
+            default:
+                err = makeCE(ErrorCode::ErrNeedStatement);
+        }
+
+        return err;
+    }
+
+    // '{' {<variable-declaration>} {<statement>} '}'
+
     std::optional<CompilationError> Analyser::analyseCompoundStatement(bool funcBody) {
         debugOut("analyse compound statement");
+        if (!funcBody)
+            setSymbolTable();
 
         if (mismatchType(peek, TokenType::LEFT_BRACE))
             return makeCE(ErrorCode::ErrMissingBrace);
         peek = nextToken();
 
-        if (!funcBody)
-            setSymbolTable();
         auto err = analyseVariableDeclaration();
         if (err.has_value())
             return err;
 
         // statement-seq
-        while (true) {
-            if (!peek.has_value() || !isStatementFirst(peek.value()))
-                break;
-
-            debugOut("analyse statement");
-
-            auto next = peek;   // get token type
-
-            switch (peek.value().GetType()) {
-                case TokenType::LEFT_BRACE:
-                    err = analyseCompoundStatement(false);
-                    break;
-
-                case TokenType::IF:
-                    err = analyseConditionStatement();
-                    break;
-
-                case TokenType::WHILE:
-                    err = analyseLoopStatement();
-                    break;
-
-                case TokenType::RETURN:
-                    err = analyseJumpStatement();
-                    break;
-
-                case TokenType::PRINT:
-                    err = analysePrintStatement();
-                    break;
-
-                case TokenType::SCAN:
-                    err = analyseScanStatement();
-                    break;
-
-                case TokenType::SEMICOLON:
-                    peek = nextToken();
-                    break;
-
-                case TokenType::IDENTIFIER:
-                    next = nextToken();
-                    unreadToken();
-                    if (!next.has_value())
-                        return makeCE(ErrorCode::ErrIncompleteExpression);
-                    else if (next.value().GetType() == TokenType::ASSIGN_SIGN)
-                        err = analyseAssignmentStatement();
-                    else if (next.value().GetType() == TokenType::LEFT_PAREN)
-                        err = analyseFunctionCall();
-                    else
-                        return makeCE(ErrorCode::ErrSyntaxError);
-                    break;
-
-                default:
-                    return makeCE(ErrorCode::ErrSyntaxError);
-            }
-
+        while (isStatementFirst(peek)) {
+            err = analyseStatement();
             if (err.has_value())
                 return err;
         }
@@ -330,44 +363,179 @@ namespace miniplc0 {
         return {};
     }
 
-    // <condition-statement> ::=
-    //     'if' '(' <condition> ')' <statement> ['else' <statement>]
-    //    |'switch' '(' <expression> ')' '{' {<labeled-statement>} '}'
-    std::optional<CompilationError> Analyser::analyseConditionStatement() {
-        debugOut("analyse condition statement");
+    // <expression>[<relational-operator><expression>]
+    std::optional<CompilationError> Analyser::analyseCondition() {
+        debugOut("analyse condition");
 
-        return std::optional<CompilationError>();
-    }
+        auto err = analyseExpression();
+        if (err.has_value())
+            return err;
 
-    std::optional<CompilationError> Analyser::analyseLoopStatement() {
-        debugOut("analyse loop statement");
+        if (isRelOpr(peek)) {
+            auto relation = peek.value();
+            peek = nextToken();
 
-        return std::optional<CompilationError>();
-    }
-
-    // <jump-statement> ::=     ('break'|'continue'|'return' [<expression>]) ';'
-    std::optional<CompilationError> Analyser::analyseJumpStatement() {
-        debugOut("analyse jump statement");
-
-        return std::optional<CompilationError>();
-    }
-
-    // <print-statement> ::=
-    //    'print' '(' [<printable-list>] ')' ';'
-    //<printable-list>  ::=
-    //    <printable> {',' <printable>}
-    //<printable> ::=
-    //    <expression> | <string-literal>
-    std::optional<CompilationError> Analyser::analysePrintStatement() {
-        debugOut("analyse print statement");
+            err = analyseExpression();
+            if (err.has_value())
+                return err;
+        }
 
         return {};
     }
 
-    // <scan-statement> ::=
-    //    'scan' '(' <identifier> ')' ';'
+    // 'if' '(' <condition> ')' <statement> ['else' <statement>]
+    std::optional<CompilationError> Analyser::analyseConditionStatement() {
+        debugOut("analyse condition statement");
+
+        if (mismatchType(peek, TokenType::IF))
+            return makeCE(ErrorCode::ErrSyntaxError);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::LEFT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        auto err = analyseCondition();
+        if (err.has_value())
+            return err;
+
+        if (mismatchType(peek, TokenType::RIGHT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        err = analyseStatement();
+        if (err.has_value())
+            return err;
+
+        if (!mismatchType(peek, TokenType::ELSE)) {
+            peek = nextToken();
+            err = analyseStatement();
+            if (err.has_value())
+                return err;
+        }
+
+        return std::optional<CompilationError>();
+    }
+
+    // 'while' '(' <condition> ')' <statement>
+    std::optional<CompilationError> Analyser::analyseLoopStatement() {
+        debugOut("analyse loop statement");
+
+        if (mismatchType(peek, TokenType::WHILE))
+            return makeCE(ErrorCode::ErrSyntaxError);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::LEFT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        auto err = analyseCondition();
+        if (err.has_value())
+            return err;
+
+        if (mismatchType(peek, TokenType::RIGHT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        err = analyseStatement();
+        if (err.has_value())
+            return err;
+
+        return std::optional<CompilationError>();
+    }
+
+    // 'return' [<expression>] ';'
+    std::optional<CompilationError> Analyser::analyseJumpStatement() {
+        debugOut("analyse jump statement");
+
+        if (mismatchType(peek, TokenType::RETURN))
+            return makeCE(ErrorCode::ErrSyntaxError);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::SEMICOLON)) {
+            auto err = analyseExpression();
+            if (err.has_value())
+                return err;
+        }
+
+        if (mismatchType(peek, TokenType::SEMICOLON))
+            return makeCE(ErrorCode::ErrNoSemicolon);
+        peek = nextToken();
+
+        return std::optional<CompilationError>();
+    }
+
+    // 'print' '(' [<printable-list>] ')' ';'
+    std::optional<CompilationError> Analyser::analysePrintStatement() {
+        debugOut("analyse print statement");
+
+        if (mismatchType(peek, TokenType::PRINT))
+            return makeCE(ErrorCode::ErrSyntaxError);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::LEFT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::RIGHT_PAREN)) {
+            // <printable> {',' <printable>}
+            // <printable> ::= <expression> | <string-literal>
+            while (true) {
+                if (!mismatchType(peek, TokenType::STRING)) {
+                    // do something
+                } else {
+                    auto err = analyseExpression();
+                    if (err.has_value())
+                        return err;
+                }
+
+                if (mismatchType(peek, TokenType::COMMA))
+                    break;
+                else
+                    peek = nextToken();
+            }
+        }
+
+        if (mismatchType(peek, TokenType::RIGHT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::SEMICOLON))
+            return makeCE(ErrorCode::ErrNoSemicolon);
+        peek = nextToken();
+
+        return {};
+    }
+
+    // 'scan' '(' <identifier> ')' ';'
     std::optional<CompilationError> Analyser::analyseScanStatement() {
         debugOut("analyse scan statement");
+
+        if (mismatchType(peek, TokenType::SCAN))
+            return makeCE(ErrorCode::ErrSyntaxError);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::LEFT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::IDENTIFIER))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        std::string id = peek.value().GetValueString();
+        peek = nextToken();
+
+        if (!isDeclared(id))
+            return makeCE(ErrorCode::ErrNotDeclared);
+        if (isConstant(id))
+            return makeCE(ErrorCode::ErrAssignToConstant);
+
+        if (mismatchType(peek, TokenType::RIGHT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::SEMICOLON))
+            return makeCE(ErrorCode::ErrNoSemicolon);
+        peek = nextToken();
 
         return std::optional<CompilationError>();
     }
@@ -376,90 +544,106 @@ namespace miniplc0 {
     std::optional<CompilationError> Analyser::analyseAssignmentStatement() {
         debugOut("analyse assignment statement");
 
-        // 从语句序列处跳转，一定是标识符
-//        auto next = nextToken();
-//        std::string id = next.value().GetValueString();
-//
-//        // 标识符声明过吗？标识符是常量吗？
-//        if (!isDeclared(id))
-//            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNotDeclared);
-//        if (isConstant(id))
-//            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrAssignToConstant);
-//
-//        // =
-//        next = nextToken();
-//        if (mismatchType(next, TokenType::ASSIGN_SIGN))
-//            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrIncompleteExpression);
-//
-//        // <表达式>
-//        auto err = analyseExpression();
-//        if (err.has_value())
-//            return err;
-//
-//        // ;
-//        next = nextToken();
-//        if (mismatchType(next, TokenType::SEMICOLON))
-//            return std::make_optional<CompilationError>(_current_pos, ErrorCode::ErrNoSemicolon);
-//
-//        if (isUninitializedVariable(id))
-//            initVariable(id);
-//        _instructions.emplace_back(Operation::STO, getStackIndex(id));
+        if (mismatchType(peek, TokenType::IDENTIFIER))
+            return makeCE(ErrorCode::ErrSyntaxError);
+        std::string id = peek.value().GetValueString();
+        peek = nextToken();
+
+        if (mismatchType(peek, TokenType::ASSIGN_SIGN))
+            return makeCE(ErrorCode::ErrSyntaxError);
+        peek = nextToken();
+
+        if (!isDeclared(id))
+            return makeCE(ErrorCode::ErrNotDeclared);
+        if (isConstant(id))
+            return makeCE(ErrorCode::ErrAssignToConstant);
+
+        auto err = analyseExpression();
+        if (err.has_value())
+            return err;
+
+        if (isUninitializedVariable(id))
+            initVariable(id);
 
         return {};
     }
 
-    // <function-call> ::=
-    //    <identifier> '(' [<expression-list>] ')'
+    // <identifier> '(' [<expression-list>] ')'
+    // <expression-list> ::= <expression>{','<expression>}
     std::optional<CompilationError> Analyser::analyseFunctionCall() {
         debugOut("analyse func call");
 
-        return std::optional<CompilationError>();
-    }
+        if (mismatchType(peek, TokenType::IDENTIFIER))
+            return makeCE(ErrorCode::ErrSyntaxError);
+        std::string id = peek.value().GetValueString();
+        peek = nextToken();
 
-    // <condition> ::=
-    //     <expression>[<relational-operator><expression>]
-    //
-    //<condition-statement> ::=
-    //     'if' '(' <condition> ')' <statement> ['else' <statement>]
-    //    |'switch' '(' <expression> ')' '{' {<labeled-statement>} '}'
-    //
-    //<labeled-statement> ::=
-    //     'case' (<integer-literal>|<char-literal>) ':' <statement>
-    //    |'default' ':' <statement>
-    std::optional<CompilationError> Analyser::analyseCondition() {
+        if (!isFunction(id))
+            return makeCE(ErrorCode::ErrFunctionNotDefined);
+
+        if (mismatchType(peek, TokenType::LEFT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
+        int paraNum = 0;
+        if (mismatchType(peek, TokenType::RIGHT_PAREN)) {
+            // <expression>{','<expression>}
+            while (true) {
+                auto err = analyseExpression();
+                if (err.has_value())
+                    return err;
+                paraNum++;
+
+                if (mismatchType(peek, TokenType::COMMA))
+                    break;
+                else
+                    peek = nextToken();
+            }
+        }
+
+        // all vars are 1 slot long, so paraNum == paraSize
+        if (paraNum != getFuncParaSize(id))
+            return makeCE(ErrorCode::ErrInvalidFunctionCall);
+
+        if (mismatchType(peek, TokenType::RIGHT_PAREN))
+            return makeCE(ErrorCode::ErrIncompleteExpression);
+        peek = nextToken();
+
         return std::optional<CompilationError>();
     }
 
 	// <expression> ::= <Term>{<additive-operator><Term>}
 	std::optional<CompilationError> Analyser::analyseExpression() {
-		// <项>
-		auto err = analyseTerm();
-		if (err.has_value())
-			return err;
-
-		// {<加法型运算符><项>}
-		while (true) {
-			// 预读
-			auto next = nextToken();
-			if (!next.has_value())
-				return {};
-			auto type = next.value().GetType();
-			if (type != TokenType::PLUS_SIGN && type != TokenType::MINUS_SIGN) {
-				unreadToken();
-				return {};
-			}
-
-			// <项>
-			err = analyseTerm();
-			if (err.has_value())
-				return err;
-
-			// 根据结果生成指令
-			if (type == TokenType::PLUS_SIGN)
-				_instructions.emplace_back(Operation::ADD, 0);
-			else if (type == TokenType::MINUS_SIGN)
-				_instructions.emplace_back(Operation::SUB, 0);
-		}
+        peek = nextToken();
+        return {};
+//		// <项>
+//		auto err = analyseTerm();
+//		if (err.has_value())
+//			return err;
+//
+//		// {<加法型运算符><项>}
+//		while (true) {
+//			// 预读
+//			auto next = nextToken();
+//			if (!next.has_value())
+//				return {};
+//			auto type = next.value().GetType();
+//			if (type != TokenType::PLUS_SIGN && type != TokenType::MINUS_SIGN) {
+//				unreadToken();
+//				return {};
+//			}
+//
+//			// <项>
+//			err = analyseTerm();
+//			if (err.has_value())
+//				return err;
+//
+//			// 根据结果生成指令
+//			if (type == TokenType::PLUS_SIGN)
+//				_instructions.emplace_back(Operation::ADD, 0);
+//			else if (type == TokenType::MINUS_SIGN)
+//				_instructions.emplace_back(Operation::SUB, 0);
+//		}
 	}
 
 
@@ -634,23 +818,24 @@ namespace miniplc0 {
     }
 
     void Analyser::initVariable(const std::string & id) {
-	    _symbols[_findSymbol(id)].setInited(true);
+        if (isDeclared(id))
+            _symbols[_findSymbol(id)].setInited(true);
     }
 
-    bool Analyser::isDeclared(const std::string& s) {
+    inline bool Analyser::isDeclared(const std::string& s) {
         return _findSymbol(s) > -1;
 	}
 
     bool Analyser::isConstant(const std::string&s) {
-        return !isFunction(s) && _symbols[_findSymbol(s)].isConst();
+        return isDeclared(s) && !isFunction(s) && _symbols[_findSymbol(s)].isConst();
     }
 
     bool Analyser::isUninitializedVariable(const std::string &s){
-        return !isFunction(s) && !_symbols[_findSymbol(s)].isInited();
+        return isDeclared(s) && !isFunction(s) && !_symbols[_findSymbol(s)].isInited();
     }
 
     bool Analyser::isFunction(const std::string &s) {
-        return _symbols[_findSymbol(s)].getFuncIndex() > -1;
+        return isDeclared(s) && _symbols[_findSymbol(s)].getFuncIndex() > -1;
     }
 
     bool Analyser::isLocal(const std::string &s) {
@@ -658,6 +843,14 @@ namespace miniplc0 {
     }
 
     int32_t Analyser::getStackIndex(const std::string& id) {
-        return _symbols[_findSymbol(id)].getStackIndex();
+        return isDeclared(id) && _symbols[_findSymbol(id)].getStackIndex();
+    }
+
+    int Analyser::getFuncParaSize(const std::string &s) {
+        if (!isFunction(s))
+            return -1;
+        int funcId = _symbols[_findSymbol(s)].getFuncIndex();
+
+        return _functions[funcId].getParaSize();
     }
 }

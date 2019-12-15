@@ -37,6 +37,7 @@ namespace miniplc0 {
 		std::optional<CompilationError> analyseVariableDeclaration();
 		std::optional<CompilationError> analyseFunctionDefinition();
 
+		std::optional<CompilationError> analyseStatement();
 		std::optional<CompilationError> analyseCompoundStatement(bool funcBody);
         std::optional<CompilationError> analyseConditionStatement();
         std::optional<CompilationError> analyseLoopStatement();
@@ -75,6 +76,7 @@ namespace miniplc0 {
 		void addUninitializedVariable(const Token&, SymbolType);
 		int addFunction(const Token&, SymbolType);     // return function index
         void addFuncPara(int funcId, SymbolType);
+        int getFuncParaSize(const std::string&);
 
 		void setSymbolTable();
 		void resetSymbolTable();
