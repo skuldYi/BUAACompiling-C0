@@ -24,11 +24,11 @@ namespace miniplc0 {
         return t;
     }
 
-    std::optional<long> strToLong(const std::string& s) {
-        long ret;
+    std::optional<unsigned long> strToLong(const std::string& s) {
+        unsigned long ret;
         try {
             // auto choose base: dec or hex
-            ret = std::stol(s, 0, 0);
+            ret = std::stoul(s, 0, 0);
         } catch (std::out_of_range& e) {
             return {};
         }
@@ -151,7 +151,7 @@ namespace miniplc0 {
                 } else if (miniplc0::isalpha(peek)) {
                     return makeCE(pos, ErrInvalidIdentifier);
                 } else {
-                    return makeTk(TokenType::UNSIGNED_INTEGER, 0L);
+                    return makeTk(TokenType::UNSIGNED_INTEGER, (unsigned long) 0);
                 }
                 break;
             }

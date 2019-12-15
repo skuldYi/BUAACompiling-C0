@@ -81,7 +81,7 @@ namespace miniplc0 {
 			}
 			catch (const std::bad_any_cast&) {}
 			try {
-				return std::to_string(std::any_cast<long>(_value));
+				return std::to_string(std::any_cast<unsigned long>(_value));
 			}
 			catch (const std::bad_any_cast&) {
                 return "No suitable cast for token value.";
