@@ -316,7 +316,7 @@ namespace miniplc0 {
                     if (ss.str().length() == 2) {
                         // ', ch
                         peek = nextChar();
-                        return makeTk(TokenType::CHAR, ss.str()[1]);
+                        return makeTk(TokenType::UNSIGNED_CHAR, ss.str()[1]);
                     } else {
                         return makeCE(pos, ErrInvalidCharacter);
                     }
