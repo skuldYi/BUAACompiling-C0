@@ -8,7 +8,6 @@ namespace miniplc0 {
     enum SymbolType {
         Char,
         Int,
-        String,
         Double,
         Void
     };
@@ -46,9 +45,6 @@ namespace miniplc0 {
                     break;
                 case Int:
                     type = 'I';
-                    break;
-                case String:
-                    type = 'S';
                     break;
                 case Double:
                     type = 'D';

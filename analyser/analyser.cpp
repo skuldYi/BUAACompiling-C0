@@ -563,8 +563,7 @@ namespace miniplc0 {
         if (err.has_value())
             return err;
 
-        if (isUninitializedVariable(id))
-            initVariable(id);
+        initVariable(id);
 
         return {};
     }
@@ -778,8 +777,8 @@ namespace miniplc0 {
 		if (tk.GetType() != TokenType::IDENTIFIER)
 			DieAndPrint("only identifier can be added to the table.");
 
-		_symbols.emplace_back(tk.GetValueString(), _nextTokenIndex, type, isConst, isInit, funInd);
-		_nextTokenIndex++;
+		_symbols.emplace_back(tk.GetValueString(), _nextStackIndex, type, isConst, isInit, funInd);
+		_nextStackIndex++;
 	}
 
     int Analyser::_findSymbol(const std::string & str) {
@@ -806,7 +805,7 @@ namespace miniplc0 {
 
     int Analyser::addFunction(const Token & tk, SymbolType type) {
 	    int16_t funInd = _functions.size();
-	    _addVar(tk, SymbolType::String, true, true, funInd);
+	    _addVar(tk, type, true, true, funInd);
 	    _functions.emplace_back(type);
 
         return funInd;
@@ -817,13 +816,17 @@ namespace miniplc0 {
     }
 
     void Analyser::setSymbolTable() {
-        _symbolTableSizes.push_back(_symbols.size());
+        _lastSymbolTable.push_back(_symbols.size());
+        _lastIndex.push_back(_nextStackIndex);
     }
 
     void Analyser::resetSymbolTable() {
-        int size = _symbolTableSizes.back();
-        _symbolTableSizes.pop_back();
+        int size = _lastSymbolTable.back();
+        _lastSymbolTable.pop_back();
         _symbols.erase(_symbols.begin() + size, _symbols.end());
+
+        _nextStackIndex = _lastIndex.back();
+        _lastIndex.pop_back();
     }
 
     void Analyser::initVariable(const std::string & id) {
@@ -848,7 +851,7 @@ namespace miniplc0 {
     }
 
     bool Analyser::isLocal(const std::string &s) {
-        return _findSymbol(s) >= _symbolTableSizes.back();
+        return _findSymbol(s) >= _lastSymbolTable.back();
     }
 
     int32_t Analyser::getStackIndex(const std::string& id) {

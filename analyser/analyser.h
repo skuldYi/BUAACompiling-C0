@@ -22,7 +22,7 @@ namespace miniplc0 {
 	public:
 		Analyser(std::vector<Token> v)
 			: _tokens(std::move(v)), _offset(0), _instructions({}), _current_pos(0, 0),
-			_symbols({}), _symbolTableSizes({}), _functions({}), _nextTokenIndex(0) {}
+              _symbols({}), _functions({}), _nextStackIndex(0), _lastSymbolTable({}), _lastIndex({}) {}
 		Analyser(Analyser&&) = delete;
 		Analyser(const Analyser&) = delete;
 		Analyser& operator=(Analyser) = delete;
@@ -64,31 +64,31 @@ namespace miniplc0 {
 
 		// 符号表
         std::vector<Symbol> _symbols;
-        std::vector<int> _symbolTableSizes;
         std::vector<Func> _functions;
+        int32_t _nextStackIndex;
+        std::vector<int> _lastSymbolTable;
+        std::vector<int> _lastIndex;
 
-		void _addVar(const Token&, SymbolType type, bool isConst, bool isInit, int16_t funInd);
+        void _addVar(const Token&, SymbolType type, bool isConst, bool isInit, int16_t funInd);
 		int _findSymbol(const std::string&);    // return index in symbol table
 
 		void addVariable(const Token&, SymbolType);
-		void addConstant(const Token&, SymbolType);
-		void addUninitializedVariable(const Token&, SymbolType);
-		int addFunction(const Token&, SymbolType);     // return function index
+        void addConstant(const Token&, SymbolType);
+        void addUninitializedVariable(const Token&, SymbolType);
+        int addFunction(const Token&, SymbolType);     // return function index
         void addFuncPara(int funcId, SymbolType);
         int getFuncParaSize(const std::string&);
 
-		void setSymbolTable();
+        void setSymbolTable();
 		void resetSymbolTable();
 
-		void initVariable(const std::string&);
-		bool isDeclared(const std::string&);
+        void initVariable(const std::string&);
+        bool isDeclared(const std::string&);
         bool isConstant(const std::string&);
         bool isUninitializedVariable(const std::string &);
         bool isFunction(const std::string&);
         bool isLocal(const std::string &);
-		int32_t getStackIndex(const std::string&);
 
-		// 下一个 token 在栈的偏移
-		int32_t _nextTokenIndex;
+		int32_t getStackIndex(const std::string&);
 	};
 }
