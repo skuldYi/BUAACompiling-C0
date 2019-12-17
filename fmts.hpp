@@ -272,8 +272,11 @@ namespace fmt {
 		auto format(const miniplc0::Operation &p, FormatContext &ctx) {
 			std::string name;
 			switch (p) {
-			case miniplc0::ILL:
-				name = "ILL";
+			case miniplc0::ASN:
+				name = "ASN";
+				break;
+			case miniplc0::NEG:
+				name = "NEG";
 				break;
 			case miniplc0::ADD:
 				name = "ADD";
@@ -287,18 +290,48 @@ namespace fmt {
 			case miniplc0::DIV:
 				name = "DIV";
 				break;
-			case miniplc0::WRT:
-				name = "WRT";
+			case miniplc0::LAB:
+				name = "LAB";
 				break;
-			case miniplc0::LIT:
-				name = "LIT";
+			case miniplc0::PAR:
+				name = "PARA";
 				break;
-			case miniplc0::LOD:
-				name = "LOD";
+			case miniplc0::PUSH:
+				name = "PUSH";
 				break;
-			case miniplc0::STO:
-				name = "STO";
+			case miniplc0::CAL:
+				name = "CALL";
 				break;
+			case miniplc0::RET:
+				name = "RET";
+				break;
+            case miniplc0::EQU:
+                name = "EQU";
+                break;
+            case miniplc0::NE:
+                name = "NE";
+                break;
+            case miniplc0::LT:
+                name = "LT";
+                break;
+            case miniplc0::LE:
+                name = "LE";
+                break;
+            case miniplc0::GT:
+                name = "GT";
+                break;
+            case miniplc0::GE:
+                name = "GE";
+                break;
+            case miniplc0::GOTO:
+                name = "GOTO";
+                break;
+            case miniplc0::BNZ:
+                name = "BNZ";
+                break;
+            case miniplc0::BZ:
+                name = "BZ";
+                break;
 			}
 			return format_to(ctx.out(), name);
 		}
@@ -311,21 +344,31 @@ namespace fmt {
 		template <typename FormatContext>
 		auto format(const miniplc0::Instruction &p, FormatContext &ctx) {
 			std::string name;
-			switch (p.GetOperation())
-			{
-			case miniplc0::ILL:
-			case miniplc0::ADD:
-			case miniplc0::SUB:
-			case miniplc0::MUL:
-			case miniplc0::DIV:
-			case miniplc0::WRT:
-				return format_to(ctx.out(), "{}", p.GetOperation());
-			case miniplc0::LIT:
-			case miniplc0::LOD:
-			case miniplc0::STO:
-				return format_to(ctx.out(), "{} {}", p.GetOperation(), p.GetX());
-			}
-			return format_to(ctx.out(), "ILL");
+            return format_to(ctx.out(), "{}\t{}\t{}\t{}", p.getOperation(), p.getX(), p.getY(), p.getR());
+
+//			switch (p.getOperation())
+//			{
+//			case miniplc0::LAB:
+//			case miniplc0::PUSH:
+//			case miniplc0::CAL:
+//			case miniplc0::RET:
+//			case miniplc0::GOTO:
+//			case miniplc0::BNZ:
+//			case miniplc0::BZ:
+//				return format_to(ctx.out(), "{} {}", p.getOperation(), p.getX())
+//
+//			case miniplc0::ADD:
+//			case miniplc0::SUB:
+//			case miniplc0::MUL:
+//			case miniplc0::DIV:
+//			case miniplc0::WRT:
+//				return format_to(ctx.out(), "{}", p.GetOperation());
+//			case miniplc0::LIT:
+//			case miniplc0::LOD:
+//			case miniplc0::STO:
+//				return format_to(ctx.out(), "{} {}", p.GetOperation(), p.GetX());
+//			}
+//			return format_to(ctx.out(), "ILL");
 		}
 	};
 }

@@ -1,0 +1,23 @@
+expr		OP		opr1	opr2	result
+a = t		ASN		t		-		a
+t = -a		NEG		a 		-		t
+t = a + b	ADD		a 		b		t
+t = a - b	SUB		a 		b		t
+t = a * b	MUL		a 		b		t
+t = a / b	DIV		a 		b		t
+
+label a 	LAB		a
+foo(int a)	PARA	a 		int
+foo(a)		PUSH	a
+			CAL		foo
+return x	RET 	x
+
+a == b		EQU		a 		b 		
+a != b		NE		a 		b 		
+a < b		LT		a 		b 		
+a <= b		LE		a 		b 		
+a > b		GT		a 		b 		
+a >= b		GE		a 		b 		
+无条件跳转	GOTO	LABEL1
+满足跳转		BNZ 	LABEL1
+不满足跳转	BZ 		LABEL1
