@@ -75,11 +75,12 @@ namespace miniplc0 {
 		void addVariable(const Token&, SymbolType);
         void addConstant(const Token&, SymbolType);
         void addUninitializedVariable(const Token&, SymbolType);
+        SymbolType getSymbolType(const std::string&);
+
         int addFunction(const Token&, SymbolType);     // return function index
         void addFuncPara(int funcId, SymbolType);
-
         int getFuncParaSize(const std::string&);
-        SymbolType getSymbolType(const std::string&);
+        SymbolType currentFuncType();
 
         void setSymbolTable();
 		void resetSymbolTable();

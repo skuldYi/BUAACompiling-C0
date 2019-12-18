@@ -202,6 +202,9 @@ namespace miniplc0 {
 
             // 函数名的作用域是其被声明的作用域
             // 函数的参数名或局部变量名作用域是函数体内部
+            if (isLocal(id.GetValueString()))
+                return makeCE(ErrorCode::ErrDuplicateDeclaration);
+
             int funId = addFunction(id, type.value());
             setSymbolTable();
             // symbol table will be reset in analyse compound statement
@@ -257,8 +260,6 @@ namespace miniplc0 {
             if (err.has_value())
                 return err;
         }
-
-        // todo: 不能在返回类型为`void`的函数中使用有值的返回语句，也不能在非`void`函数中使用无值的返回语句。
     }
 
     // <statement> ::=
@@ -459,16 +460,25 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrSyntaxError);
         peek = nextToken();
 
+        auto type = currentFuncType();
+        bool hasRet = false;
+
         if (mismatchType(peek, TokenType::SEMICOLON)) {
+            if (type == SymbolType::Void)
+                return makeCE(ErrorCode::ErrInvalidReturnValue);
+            hasRet = true;
+
             std::string value;
             auto err = analyseExpression(value);
             if (err.has_value())
                 return err;
         }
-
         if (mismatchType(peek, TokenType::SEMICOLON))
             return makeCE(ErrorCode::ErrNoSemicolon);
         peek = nextToken();
+
+        if (type != SymbolType::Void && !hasRet)
+            return makeCE(ErrorCode::ErrInvalidReturnValue);
 
         return std::optional<CompilationError>();
     }
@@ -919,5 +929,9 @@ namespace miniplc0 {
 
     void Analyser::addInstruction(Operation opr, const std::string& x, const std::string& y, const std::string& r) {
         _instructions.emplace_back(opr, x, y, r);
+    }
+
+    SymbolType Analyser::currentFuncType() {
+        return _functions[_functions.size() - 1].getReturnType();
     }
 }
