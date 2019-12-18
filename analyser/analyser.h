@@ -94,6 +94,10 @@ namespace miniplc0 {
 		int32_t getStackIndex(const std::string&);
 
         std::string getTempName();
+        int label = 0;
+        std::string getLabel() {
+            return "#Label" + std::to_string(label++) + ":";
+        }
         void addInstruction(Operation opr, const std::string& x);
         void addInstruction(Operation opr, const std::string& x, const std::string& y);
         void addInstruction(Operation opr, const std::string& x, const std::string& y, const std::string& r);

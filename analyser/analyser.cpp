@@ -82,12 +82,8 @@ namespace miniplc0 {
     //    [<const-qualifier>]<type-specifier>
     //    <identifier>['='<expression> ] {','<identifier>['='<expression> ]}
 
-    // <function-definition> ::=
-    // <type-specifier><identifier> '(' ...
-
-    // <compound-statement> ::=
-    //    '{' {<variable-declaration>} {<statement>} '}'
-
+    // <function-definition> ::= <type-specifier><identifier> '(' ...
+    // <compound-statement> ::= '{' {<variable-declaration>} {<statement>} '}'
     std::optional<CompilationError> Analyser::analyseVariableDeclaration() {
 		while (true) {
 		    if (isStatementFirst(peek) || !mismatchType(peek, TokenType::RIGHT_BRACE))
@@ -176,8 +172,7 @@ namespace miniplc0 {
 	}
 
 
-	// <function-definition> ::=
-    //    <type-specifier><identifier> '(' [<parameter-declaration-list>] ')' <compound-statement>
+	// <type-specifier><identifier> '(' [<parameter-declaration-list>] ')' <compound-statement>
     //
     // <parameter-declaration-list> ::=
     //    <parameter-declaration>{','<parameter-declaration>}
@@ -188,7 +183,7 @@ namespace miniplc0 {
             if (!peek.has_value())
                 return {};
 
-            debugOut("analyse func definition");
+//            debugOut("analyse func definition");
 
             auto type = specifierType(peek);
             if (!type.has_value())
@@ -207,8 +202,8 @@ namespace miniplc0 {
 
             int funId = addFunction(id, type.value());
             setSymbolTable();
+            addInstruction(Operation::LAB, "#" + id.GetValueString());
             // symbol table will be reset in analyse compound statement
-
 
             if (mismatchType(peek, TokenType::LEFT_PAREN)) {
                 return makeCE(ErrorCode::ErrIncompleteExpression);
@@ -276,8 +271,6 @@ namespace miniplc0 {
         if (!isStatementFirst(peek))
             return makeCE(ErrorCode::ErrNeedStatement);
 
-//        debugOut("analyse statement");
-
         std::optional<CompilationError> err = {};
         auto next = peek;   // get token type
 
@@ -340,9 +333,8 @@ namespace miniplc0 {
     }
 
     // '{' {<variable-declaration>} {<statement>} '}'
-
     std::optional<CompilationError> Analyser::analyseCompoundStatement(bool funcBody) {
-        debugOut("analyse compound statement");
+//        debugOut("analyse compound statement");
         if (!funcBody)
             setSymbolTable();
 
@@ -386,6 +378,34 @@ namespace miniplc0 {
             err = analyseExpression(opr2);
             if (err.has_value())
                 return err;
+
+            Operation op;
+            switch (relation.GetType()) {
+                case TokenType::LESS_SIGN:
+                    op = Operation::LT;
+                    break;
+                case TokenType::LESSEQUAL_SIGN:
+                    op = Operation::LE;
+                    break;
+                case TokenType::GREATER_SIGN:
+                    op = Operation::GT;
+                    break;
+                case TokenType::GREATEREQUAL_SIGN:
+                    op = Operation::GE;
+                    break;
+                case TokenType::EQUAL_SIGN:
+                    op = Operation::EQU;
+                    break;
+                case TokenType::NOTEQUAL_SIGN:
+                    op = Operation::NE;
+                    break;
+                default:
+                    return makeCE(ErrorCode::ErrSyntaxError);
+            }
+
+            addInstruction(op, opr1, opr2);
+        } else {
+            addInstruction(Operation::NE, opr1, "$0");
         }
 
         return {};
@@ -393,7 +413,23 @@ namespace miniplc0 {
 
     // 'if' '(' <condition> ')' <statement> ['else' <statement>]
     std::optional<CompilationError> Analyser::analyseConditionStatement() {
-        debugOut("analyse condition statement");
+        /*
+         *  condition
+         *  BZ #label-else
+         *  {if-statement}
+         *  #label-else
+         *
+         *  condition
+         *  BZ #label-else
+         *  {if-statement}
+         *  GOTO #label-end
+         *  #label-else
+         *  {else-statement}
+         *  #label-end
+         * */
+
+//        debugOut("analyse condition statement");
+        std::string labelElse = getLabel();
 
         if (mismatchType(peek, TokenType::IF))
             return makeCE(ErrorCode::ErrSyntaxError);
@@ -411,15 +447,23 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
 
+        addInstruction(Operation::BZ, labelElse);
+        // if-statements
         err = analyseStatement();
         if (err.has_value())
             return err;
 
         if (!mismatchType(peek, TokenType::ELSE)) {
+            std::string labelEnd = getLabel();
+            addInstruction(Operation::GOTO, labelEnd);
+            addInstruction(Operation::LAB, labelElse);
             peek = nextToken();
             err = analyseStatement();
             if (err.has_value())
                 return err;
+            addInstruction(Operation::LAB, labelEnd);
+        } else {
+            addInstruction(Operation::LAB, labelElse);
         }
 
         return std::optional<CompilationError>();
@@ -427,11 +471,21 @@ namespace miniplc0 {
 
     // 'while' '(' <condition> ')' <statement>
     std::optional<CompilationError> Analyser::analyseLoopStatement() {
-        debugOut("analyse loop statement");
+//        debugOut("analyse loop statement");
+        /*  #label-begin
+         *  condition
+         *  BZ #label-end
+         *  {while-statement}
+         *  GOTO #label-begin
+         *  #label-end
+         * */
+        std::string labelBegin = getLabel(), labelEnd = getLabel();
 
         if (mismatchType(peek, TokenType::WHILE))
             return makeCE(ErrorCode::ErrSyntaxError);
         peek = nextToken();
+
+        addInstruction(Operation::LAB, labelBegin);
 
         if (mismatchType(peek, TokenType::LEFT_PAREN))
             return makeCE(ErrorCode::ErrIncompleteExpression);
@@ -445,9 +499,15 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
 
+        addInstruction(Operation::BZ, labelEnd);
+
+        // while-statement
         err = analyseStatement();
         if (err.has_value())
             return err;
+
+        addInstruction(Operation::GOTO, labelBegin);
+        addInstruction(Operation::LAB, labelEnd);
 
         return std::optional<CompilationError>();
     }
@@ -463,12 +523,12 @@ namespace miniplc0 {
         auto type = currentFuncType();
         bool hasRet = false;
 
+        std::string value = "";
         if (mismatchType(peek, TokenType::SEMICOLON)) {
             if (type == SymbolType::Void)
                 return makeCE(ErrorCode::ErrInvalidReturnValue);
             hasRet = true;
 
-            std::string value;
             auto err = analyseExpression(value);
             if (err.has_value())
                 return err;
@@ -476,6 +536,8 @@ namespace miniplc0 {
         if (mismatchType(peek, TokenType::SEMICOLON))
             return makeCE(ErrorCode::ErrNoSemicolon);
         peek = nextToken();
+
+        addInstruction(Operation::RET, value);
 
         if (type != SymbolType::Void && !hasRet)
             return makeCE(ErrorCode::ErrInvalidReturnValue);
@@ -485,7 +547,7 @@ namespace miniplc0 {
 
     // 'print' '(' [<printable-list>] ')' ';'
     std::optional<CompilationError> Analyser::analysePrintStatement() {
-        debugOut("analyse print statement");
+//        debugOut("analyse print statement");
 
         if (mismatchType(peek, TokenType::PRINT))
             return makeCE(ErrorCode::ErrSyntaxError);
@@ -500,12 +562,14 @@ namespace miniplc0 {
             // <printable> ::= <expression> | <string-literal>
             while (true) {
                 if (!mismatchType(peek, TokenType::STRING)) {
-                    // do something
+                    addInstruction(Operation::PRT, "@" + peek.value().GetValueString());
+                    peek = nextToken();
                 } else {
                     std::string value;
                     auto err = analyseExpression(value);
                     if (err.has_value())
                         return err;
+                    addInstruction(Operation::PRT, value);
                 }
 
                 if (mismatchType(peek, TokenType::COMMA))
@@ -556,12 +620,13 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrNoSemicolon);
         peek = nextToken();
 
+        addInstruction(Operation::SCN, id);
         return std::optional<CompilationError>();
     }
 
     // <assignment-expression> ::= <identifier> '=' <expression>
     std::optional<CompilationError> Analyser::analyseAssignmentStatement() {
-        debugOut("analyse assignment statement");
+//        debugOut("analyse assignment statement");
 
         if (mismatchType(peek, TokenType::IDENTIFIER))
             return makeCE(ErrorCode::ErrSyntaxError);
@@ -691,7 +756,6 @@ namespace miniplc0 {
                 addInstruction(Operation::DIV, factor1, factor2, tmp);
 
             factor1 = tmp;
-
         }
 
         ret = factor1;
@@ -707,6 +771,7 @@ namespace miniplc0 {
     //    |<function-call>
 	std::optional<CompilationError> Analyser::analyseFactor(std::string& ret) {
 //        debugOut("Factor");
+        std::string ret1;
 
         if (!peek.has_value())
             return makeCE(ErrorCode::ErrIncompleteExpression);
@@ -732,7 +797,7 @@ namespace miniplc0 {
 		switch (peek.value().GetType()) {
             case TokenType::LEFT_PAREN:
                 peek = nextToken();
-                err = analyseExpression(ret);
+                err = analyseExpression(ret1);
                 if (!err.has_value()) {
                     if (mismatchType(peek, TokenType::RIGHT_PAREN))
                         err = makeCE(ErrorCode::ErrIncompleteExpression);
@@ -767,7 +832,7 @@ namespace miniplc0 {
                     else if (isUninitializedVariable(id))
                         err = makeCE(ErrorCode::ErrNotInitialized);
                     else {
-                        ret = id;
+                        ret1 = id;
                     }
                 }
                 break;
@@ -776,14 +841,14 @@ namespace miniplc0 {
 		        l = std::any_cast<unsigned long>(peek.value().GetValue());
 		        if (l - 1 > INT32_MAX || (l - 1 == INT32_MAX && prefix == 1))
 		            err = makeCE(ErrorCode::ErrIntegerOverflow);
-                ret = "$" + std::to_string(l);
+                ret1 = "$" + std::to_string(l);
 
 		        peek = nextToken();
                 break;
 
             case TokenType::UNSIGNED_CHAR:
                 i = (int)std::any_cast<char>(peek.value().GetValue());
-                ret = "$" + std::to_string(i);
+                ret1 = "$" + std::to_string(i);
 
                 peek = nextToken();
                 break;
@@ -794,9 +859,15 @@ namespace miniplc0 {
 		if (err.has_value())
             return err;
 
+		std::string tmp;
 		if (prefix == -1) {
-//			addInstruction(Operation::SUB, 0);
-        }
+		    tmp = getTempName();
+		    addInstruction(Operation::NEG, ret1, "", tmp);
+        } else {
+		    tmp = ret1;
+		}
+
+		ret = tmp;
 		return {};
 	}
 
