@@ -16,6 +16,7 @@ namespace miniplc0 {
 		LAB,
 		PAR,
 		PUSH,
+		POP,
 		CAL,
 		RET,
 
@@ -25,7 +26,10 @@ namespace miniplc0 {
 
 		GOTO,
 		BNZ,
-		BZ
+		BZ,
+
+		PRT,
+		SCN
 	};
 	
 	class Instruction final {

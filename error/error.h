@@ -26,7 +26,6 @@ namespace miniplc0 {
 		ErrNeedIdentifier,
 		ErrConstantNeedValue,
 		ErrNoSemicolon,
-		ErrInvalidVariableDeclaration,
 		ErrIncompleteExpression,
 		ErrNotDeclared,
 		ErrAssignToConstant,
@@ -42,7 +41,8 @@ namespace miniplc0 {
         ErrMissingBrace,
         ErrSyntaxError,
         ErrFunctionNotDefined,
-        ErrInvalidFunctionCall
+        ErrInvalidFunctionCall,
+        ErrInvalidReturnValue
     };
 
 	class CompilationError final{

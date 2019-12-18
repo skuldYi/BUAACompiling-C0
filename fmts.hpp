@@ -48,9 +48,6 @@ namespace fmt {
 			case miniplc0::ErrNoSemicolon:
 				name = "Zai? Wei shen me bu xie fen hao.";
 				break;
-			case miniplc0::ErrInvalidVariableDeclaration:
-				name = "The declaration is invalid.";
-				break;
 			case miniplc0::ErrIncompleteExpression:
 				name = "The expression is incomplete.";
 				break;
@@ -92,6 +89,9 @@ namespace fmt {
 				break;
 			case miniplc0::ErrFunctionNotDefined:
 				name = "Function must be defined before being called.";
+				break;
+			case miniplc0::ErrInvalidReturnValue:
+				name = "Return value has wrong type.";
 				break;
 			}
 			return format_to(ctx.out(), name);
@@ -299,6 +299,9 @@ namespace fmt {
 			case miniplc0::PUSH:
 				name = "PUSH";
 				break;
+			case miniplc0::POP:
+				name = "POP";
+				break;
 			case miniplc0::CAL:
 				name = "CALL";
 				break;
@@ -331,6 +334,12 @@ namespace fmt {
                 break;
             case miniplc0::BZ:
                 name = "BZ";
+                break;
+            case miniplc0::PRT:
+                name = "PRT";
+                break;
+            case miniplc0::SCN:
+                name = "SCAN";
                 break;
 			}
 			return format_to(ctx.out(), name);

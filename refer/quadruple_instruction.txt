@@ -10,7 +10,8 @@ label a 	LAB		a
 foo(int a)	PARA	a 		int
 foo(a)		PUSH	a
 			CAL		foo
-return x	RET 	x
+return a	RET 	a
+return		RET 	-
 
 a == b		EQU		a 		b 		
 a != b		NE		a 		b 		
@@ -21,3 +22,11 @@ a >= b		GE		a 		b
 无条件跳转	GOTO	LABEL1
 满足跳转		BNZ 	LABEL1
 不满足跳转	BZ 		LABEL1
+
+print(a)	PRT 	a
+scan(a)		SCN 	a
+pop{a}		POP 	a
+
+#TempVariable
+$ImmediateNumber
+@String
