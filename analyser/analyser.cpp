@@ -715,7 +715,7 @@ namespace miniplc0 {
 			if (err.has_value())
 				return err;
 
-            std::string tmp = getTempName();
+            std::string tmp = getTempName(term1, term2);
             if (type == TokenType::PLUS_SIGN)
                 addInstruction(Operation::ADD, term1, term2, tmp);
             else if (type == TokenType::MINUS_SIGN)
@@ -749,7 +749,7 @@ namespace miniplc0 {
             if (err.has_value())
                 return err;
 
-            std::string tmp = getTempName();
+            std::string tmp = getTempName(factor1, factor2);
             if (type == TokenType::MULTIPLICATION_SIGN)
                 addInstruction(Operation::MUL, factor1, factor2, tmp);
             else if (type == TokenType::DIVISION_SIGN)
@@ -861,7 +861,7 @@ namespace miniplc0 {
 
 		std::string tmp;
 		if (prefix == -1) {
-		    tmp = getTempName();
+		    tmp = getTempName(ret1);
 		    addInstruction(Operation::NEG, ret1, "", tmp);
         } else {
 		    tmp = ret1;
@@ -990,6 +990,22 @@ namespace miniplc0 {
         return tmp;
     }
 
+    std::string Analyser::getTempName(const std::string &opr1) {
+        if (opr1[0] == '#')
+            return opr1;
+        else
+            return getTempName();
+    }
+
+    std::string Analyser::getTempName(const std::string &opr1, const std::string &opr2) {
+        if (opr1[0] == '#')
+            return opr1;
+        else if (opr2[0] == '#')
+            return opr2;
+        else
+            return getTempName();
+    }
+
     void Analyser::addInstruction(Operation opr, const std::string& x) {
         _instructions.emplace_back(opr, x);
     }
@@ -1005,4 +1021,5 @@ namespace miniplc0 {
     SymbolType Analyser::currentFuncType() {
         return _functions[_functions.size() - 1].getReturnType();
     }
+
 }
