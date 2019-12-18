@@ -93,7 +93,7 @@ namespace miniplc0 {
 		    if (isStatementFirst(peek) || !mismatchType(peek, TokenType::RIGHT_BRACE))
                 return {};
 
-            debugOut("analyse var declaration");
+//            debugOut("analyse var declaration");
 
             bool isConst = false;
 
@@ -142,20 +142,24 @@ namespace miniplc0 {
                     return makeCE(ErrorCode::ErrIncompleteExpression);
 
                 if (peek.value().GetType() != TokenType::ASSIGN_SIGN) {
+                    // uninitialized
                     if (isConst)
                         return makeCE(ErrorCode::ErrConstantNeedValue);
                     else
                         addUninitializedVariable(id.value(), type.value());
                 } else {
+                    // initialized
                     if (isConst)
                         addConstant(id.value(), type.value());
                     else
                         addVariable(id.value(), type.value());
 
+                    std::string value;
                     peek = nextToken();
-                    auto err = analyseExpression();
+                    auto err = analyseExpression(value);
                     if (err.has_value())
                         return err;
+                    addInstruction(Operation::ASN, value, "", id.value().GetValueString());
                 }
 
                 if (mismatchType(peek, TokenType::COMMA))
@@ -368,7 +372,8 @@ namespace miniplc0 {
     std::optional<CompilationError> Analyser::analyseCondition() {
         debugOut("analyse condition");
 
-        auto err = analyseExpression();
+        std::string opr1;
+        auto err = analyseExpression(opr1);
         if (err.has_value())
             return err;
 
@@ -376,7 +381,8 @@ namespace miniplc0 {
             auto relation = peek.value();
             peek = nextToken();
 
-            err = analyseExpression();
+            std::string opr2;
+            err = analyseExpression(opr2);
             if (err.has_value())
                 return err;
         }
@@ -454,7 +460,8 @@ namespace miniplc0 {
         peek = nextToken();
 
         if (mismatchType(peek, TokenType::SEMICOLON)) {
-            auto err = analyseExpression();
+            std::string value;
+            auto err = analyseExpression(value);
             if (err.has_value())
                 return err;
         }
@@ -485,7 +492,8 @@ namespace miniplc0 {
                 if (!mismatchType(peek, TokenType::STRING)) {
                     // do something
                 } else {
-                    auto err = analyseExpression();
+                    std::string value;
+                    auto err = analyseExpression(value);
                     if (err.has_value())
                         return err;
                 }
@@ -559,10 +567,12 @@ namespace miniplc0 {
         if (isConstant(id))
             return makeCE(ErrorCode::ErrAssignToConstant);
 
-        auto err = analyseExpression();
+        std::string value;
+        auto err = analyseExpression(value);
         if (err.has_value())
             return err;
 
+        addInstruction(Operation::ASN, value, "", id);
         initVariable(id);
 
         return {};
@@ -578,9 +588,6 @@ namespace miniplc0 {
         std::string id = peek.value().GetValueString();
         peek = nextToken();
 
-        if (!isFunction(id))
-            return makeCE(ErrorCode::ErrFunctionNotDefined);
-
         if (mismatchType(peek, TokenType::LEFT_PAREN))
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
@@ -589,7 +596,8 @@ namespace miniplc0 {
         if (mismatchType(peek, TokenType::RIGHT_PAREN)) {
             // <expression>{','<expression>}
             while (true) {
-                auto err = analyseExpression();
+                std::string para;
+                auto err = analyseExpression(para);
                 if (err.has_value())
                     return err;
                 paraNum++;
@@ -613,37 +621,45 @@ namespace miniplc0 {
     }
 
 	// <Term>{<additive-operator><Term>}
-	std::optional<CompilationError> Analyser::analyseExpression() {
-        debugOut("Expression");
+	std::optional<CompilationError> Analyser::analyseExpression(std::string& ret) {
+//        debugOut("Expression");
 
-        auto err = analyseTerm();
+        std::string term1;
+        auto err = analyseTerm(term1);
 		if (err.has_value())
 			return err;
 
 		while (!mismatchType(peek, TokenType::PLUS_SIGN)
 		    || !mismatchType(peek, TokenType::MINUS_SIGN)) {
 
-			auto type = peek.value().GetType();
+            auto type = peek.value().GetType();
 			peek = nextToken();
 
-			err = analyseTerm();
+            std::string term2;
+			err = analyseTerm(term2);
 			if (err.has_value())
 				return err;
 
-//			if (type == TokenType::PLUS_SIGN)
-//				_instructions.emplace_back(Operation::ADD, 0);
-//			else if (type == TokenType::MINUS_SIGN)
-//				_instructions.emplace_back(Operation::SUB, 0);
+            std::string tmp = getTempName();
+            if (type == TokenType::PLUS_SIGN)
+                addInstruction(Operation::ADD, term1, term2, tmp);
+            else if (type == TokenType::MINUS_SIGN)
+                addInstruction(Operation::SUB, term1, term2, tmp);
+
+            term1 = tmp;
 		}
+
+		ret = term1;
 
         return {};
 	}
 
 	// <Factor>{<multiplicative-operator><Factor>}
-	std::optional<CompilationError> Analyser::analyseTerm() {
-        debugOut("Term");
+	std::optional<CompilationError> Analyser::analyseTerm(std::string& ret) {
+//        debugOut("Term");
 
-        auto err = analyseFactor();
+        std::string factor1;
+        auto err = analyseFactor(factor1);
         if (err.has_value())
             return err;
 
@@ -653,15 +669,22 @@ namespace miniplc0 {
             auto type = peek.value().GetType();
             peek = nextToken();
 
-            err = analyseTerm();
+            std::string factor2;
+            err = analyseFactor(factor2);
             if (err.has_value())
                 return err;
 
-//            if (type == TokenType::MULTIPLICATION_SIGN)
-//                _instructions.emplace_back(Operation::MUL, 0);
-//            else if (type == TokenType::DIVISION_SIGN)
-//                _instructions.emplace_back(Operation::DIV, 0);
+            std::string tmp = getTempName();
+            if (type == TokenType::MULTIPLICATION_SIGN)
+                addInstruction(Operation::MUL, factor1, factor2, tmp);
+            else if (type == TokenType::DIVISION_SIGN)
+                addInstruction(Operation::DIV, factor1, factor2, tmp);
+
+            factor1 = tmp;
+
         }
+
+        ret = factor1;
 
         return {};
 	}
@@ -672,8 +695,8 @@ namespace miniplc0 {
     //    |<integer-literal>
     //    |<char-literal>
     //    |<function-call>
-	std::optional<CompilationError> Analyser::analyseFactor() {
-        debugOut("Factor");
+	std::optional<CompilationError> Analyser::analyseFactor(std::string& ret) {
+//        debugOut("Factor");
 
         if (!peek.has_value())
             return makeCE(ErrorCode::ErrIncompleteExpression);
@@ -699,7 +722,7 @@ namespace miniplc0 {
 		switch (peek.value().GetType()) {
             case TokenType::LEFT_PAREN:
                 peek = nextToken();
-                err = analyseExpression();
+                err = analyseExpression(ret);
                 if (!err.has_value()) {
                     if (mismatchType(peek, TokenType::RIGHT_PAREN))
                         err = makeCE(ErrorCode::ErrIncompleteExpression);
@@ -710,11 +733,21 @@ namespace miniplc0 {
 
             case TokenType::IDENTIFIER:
                 next = nextToken();
+                id = peek.value().GetValueString();
+
                 if (!mismatchType(next, TokenType::LEFT_PAREN)) {
+                    // function-call
+                    if (!isFunction(id))
+                        return makeCE(ErrorCode::ErrFunctionNotDefined);
+
+                    // todo: function return value
+                    if (getSymbolType(id) == SymbolType::Void)
+                        return makeCE(ErrorCode::ErrVoidVariable);
+
                     unreadToken();
                     err = analyseFunctionCall();
                 } else {
-                    id = peek.value().GetValueString();
+                    // variable
                     peek = next;
 
                     if (!isDeclared(id))
@@ -724,8 +757,7 @@ namespace miniplc0 {
                     else if (isUninitializedVariable(id))
                         err = makeCE(ErrorCode::ErrNotInitialized);
                     else {
-//                        index = getStackIndex(next.value().GetValueString());
-//                        _instructions.emplace_back(Operation::LOD, index);
+                        ret = id;
                     }
                 }
                 break;
@@ -734,14 +766,15 @@ namespace miniplc0 {
 		        l = std::any_cast<unsigned long>(peek.value().GetValue());
 		        if (l - 1 > INT32_MAX || (l - 1 == INT32_MAX && prefix == 1))
 		            err = makeCE(ErrorCode::ErrIntegerOverflow);
-//                _instructions.emplace_back(Operation::LIT, integer);
+                ret = "$" + std::to_string(l);
 
 		        peek = nextToken();
                 break;
 
             case TokenType::UNSIGNED_CHAR:
                 i = (int)std::any_cast<char>(peek.value().GetValue());
-                // do something
+                ret = "$" + std::to_string(i);
+
                 peek = nextToken();
                 break;
 
@@ -752,7 +785,7 @@ namespace miniplc0 {
             return err;
 
 		if (prefix == -1) {
-//			_instructions.emplace_back(Operation::SUB, 0);
+//			addInstruction(Operation::SUB, 0);
         }
 		return {};
 	}
@@ -855,7 +888,11 @@ namespace miniplc0 {
     }
 
     int32_t Analyser::getStackIndex(const std::string& id) {
-        return isDeclared(id) && _symbols[_findSymbol(id)].getStackIndex();
+        return _symbols[_findSymbol(id)].getStackIndex();
+    }
+
+    SymbolType Analyser::getSymbolType(const std::string& id) {
+        return _symbols[_findSymbol(id)].getType();
     }
 
     int Analyser::getFuncParaSize(const std::string &s) {
@@ -864,5 +901,23 @@ namespace miniplc0 {
         int funcId = _symbols[_findSymbol(s)].getFuncIndex();
 
         return _functions[funcId].getParaSize();
+    }
+
+    std::string Analyser::getTempName() {
+        std::string tmp = "#t" + std::to_string(_nextStackIndex);
+        addVariable(Token(TokenType::IDENTIFIER, tmp, 0, 0, 0, 0), SymbolType::Int);
+        return tmp;
+    }
+
+    void Analyser::addInstruction(Operation opr, const std::string& x) {
+        _instructions.emplace_back(opr, x);
+    }
+
+    void Analyser::addInstruction(Operation opr, const std::string& x, const std::string& y) {
+        _instructions.emplace_back(opr, x, y);
+    }
+
+    void Analyser::addInstruction(Operation opr, const std::string& x, const std::string& y, const std::string& r) {
+        _instructions.emplace_back(opr, x, y, r);
     }
 }

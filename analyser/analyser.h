@@ -48,9 +48,9 @@ namespace miniplc0 {
         std::optional<CompilationError> analyseAssignmentStatement();
         std::optional<CompilationError> analyseFunctionCall();
 
-        std::optional<CompilationError> analyseExpression();
-		std::optional<CompilationError> analyseTerm();
-		std::optional<CompilationError> analyseFactor();
+        std::optional<CompilationError> analyseExpression(std::string&);
+		std::optional<CompilationError> analyseTerm(std::string&);
+		std::optional<CompilationError> analyseFactor(std::string&);
 
 		// Token 缓冲区
         std::vector<Token> _tokens;
@@ -77,7 +77,9 @@ namespace miniplc0 {
         void addUninitializedVariable(const Token&, SymbolType);
         int addFunction(const Token&, SymbolType);     // return function index
         void addFuncPara(int funcId, SymbolType);
+
         int getFuncParaSize(const std::string&);
+        SymbolType getSymbolType(const std::string&);
 
         void setSymbolTable();
 		void resetSymbolTable();
@@ -88,7 +90,12 @@ namespace miniplc0 {
         bool isUninitializedVariable(const std::string &);
         bool isFunction(const std::string&);
         bool isLocal(const std::string &);
-
 		int32_t getStackIndex(const std::string&);
+
+        std::string getTempName();
+        void addInstruction(Operation opr, const std::string& x);
+        void addInstruction(Operation opr, const std::string& x, const std::string& y);
+        void addInstruction(Operation opr, const std::string& x, const std::string& y, const std::string& r);
+
 	};
 }
