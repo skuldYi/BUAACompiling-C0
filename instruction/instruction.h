@@ -14,7 +14,7 @@ namespace miniplc0 {
 		DIV,
 
 		LAB,
-		PAR,
+		FUNC,
 		PUSH,
 		POP,
 		CAL,

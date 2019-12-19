@@ -293,8 +293,8 @@ namespace fmt {
 			case miniplc0::LAB:
 				name = "LAB";
 				break;
-			case miniplc0::PAR:
-				name = "PARA";
+			case miniplc0::FUNC:
+				name = "FUNC";
 				break;
 			case miniplc0::PUSH:
 				name = "PUSH";

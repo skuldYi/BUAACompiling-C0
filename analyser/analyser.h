@@ -46,7 +46,9 @@ namespace miniplc0 {
         std::optional<CompilationError> analysePrintStatement();
         std::optional<CompilationError> analyseScanStatement();
         std::optional<CompilationError> analyseAssignmentStatement();
-        std::optional<CompilationError> analyseFunctionCall();
+        // pass false if function's return value isn't used
+        // (function-call as a statement instead of as a factor)
+        std::optional<CompilationError> analyseFunctionCall(bool, std::string&);
 
         std::optional<CompilationError> analyseExpression(std::string&);
 		std::optional<CompilationError> analyseTerm(std::string&);

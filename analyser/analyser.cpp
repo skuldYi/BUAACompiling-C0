@@ -63,7 +63,7 @@ namespace miniplc0 {
 	// <C0-program> ::=
     //    {<variable-declaration>}{<function-definition>}
 	std::optional<CompilationError> Analyser::analyseProgram() {
-        debugOut("analyse program");
+//        debugOut("analyse program");
         setSymbolTable();
         peek = nextToken();
 
@@ -193,16 +193,16 @@ namespace miniplc0 {
             if (mismatchType(peek, TokenType::IDENTIFIER))
                 return makeCE(ErrorCode::ErrNeedIdentifier);
             auto id = peek.value();
+            std::string name = id.GetValueString();
             peek = nextToken();
 
             // 函数名的作用域是其被声明的作用域
             // 函数的参数名或局部变量名作用域是函数体内部
-            if (isLocal(id.GetValueString()))
+            if (isLocal(name))
                 return makeCE(ErrorCode::ErrDuplicateDeclaration);
 
             int funId = addFunction(id, type.value());
             setSymbolTable();
-            addInstruction(Operation::LAB, "#" + id.GetValueString());
             // symbol table will be reset in analyse compound statement
 
             if (mismatchType(peek, TokenType::LEFT_PAREN)) {
@@ -251,6 +251,8 @@ namespace miniplc0 {
             }
             peek = nextToken();
 
+            addInstruction(Operation::FUNC, name, std::to_string(getFuncParaSize(name)), "1");
+
             auto err = analyseCompoundStatement(true);
             if (err.has_value())
                 return err;
@@ -273,6 +275,7 @@ namespace miniplc0 {
 
         std::optional<CompilationError> err = {};
         auto next = peek;   // get token type
+        std::string str = "";
 
         // wrong peek will not reach here
         switch (peek.value().GetType()) {
@@ -312,7 +315,7 @@ namespace miniplc0 {
                 else if (next.value().GetType() == TokenType::ASSIGN_SIGN)
                     err = analyseAssignmentStatement();
                 else if (next.value().GetType() == TokenType::LEFT_PAREN)
-                    err = analyseFunctionCall();
+                    err = analyseFunctionCall(false, str);
                 else
                     err = makeCE(ErrorCode::ErrSyntaxError);
 
@@ -363,7 +366,7 @@ namespace miniplc0 {
 
     // <expression>[<relational-operator><expression>]
     std::optional<CompilationError> Analyser::analyseCondition() {
-        debugOut("analyse condition");
+//        debugOut("analyse condition");
 
         std::string opr1;
         auto err = analyseExpression(opr1);
@@ -655,8 +658,8 @@ namespace miniplc0 {
 
     // <identifier> '(' [<expression-list>] ')'
     // <expression-list> ::= <expression>{','<expression>}
-    std::optional<CompilationError> Analyser::analyseFunctionCall() {
-        debugOut("analyse func call");
+    std::optional<CompilationError> Analyser::analyseFunctionCall(bool useRet, std::string& ret) {
+//        debugOut("analyse func call");
 
         if (mismatchType(peek, TokenType::IDENTIFIER))
             return makeCE(ErrorCode::ErrSyntaxError);
@@ -676,6 +679,7 @@ namespace miniplc0 {
                 if (err.has_value())
                     return err;
                 paraNum++;
+                addInstruction(Operation::PUSH, para);
 
                 if (mismatchType(peek, TokenType::COMMA))
                     break;
@@ -691,6 +695,18 @@ namespace miniplc0 {
         if (mismatchType(peek, TokenType::RIGHT_PAREN))
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
+
+        addInstruction(Operation::CAL, id);
+
+        // function has a void return value will not be a factor
+        if (useRet) {
+            std::string returnValue = getTempName();
+            addInstruction(Operation::ASN, "", "", returnValue);
+            ret = returnValue;
+        } else if (getSymbolType(id) != SymbolType::Void) {
+            addInstruction(Operation::POP, "1");
+        }
+
 
         return std::optional<CompilationError>();
     }
@@ -815,12 +831,11 @@ namespace miniplc0 {
                     if (!isFunction(id))
                         return makeCE(ErrorCode::ErrFunctionNotDefined);
 
-                    // todo: function return value
                     if (getSymbolType(id) == SymbolType::Void)
                         return makeCE(ErrorCode::ErrVoidVariable);
 
                     unreadToken();
-                    err = analyseFunctionCall();
+                    err = analyseFunctionCall(true, ret1);
                 } else {
                     // variable
                     peek = next;
