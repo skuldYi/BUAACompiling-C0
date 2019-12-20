@@ -3,6 +3,7 @@
 
 #include "tokenizer/tokenizer.h"
 #include "analyser/analyser.h"
+#include "generater/generator.h"
 #include "fmts.hpp"
 
 #include <iostream>
@@ -39,18 +40,40 @@ void Analyse(std::istream& input, std::ostream& output){
 	return;
 }
 
+void Compile(std::istream& input, std::ostream& output){
+	auto tks = _tokenize(input);
+	c0::Analyser analyser(tks);
+	auto p = analyser.Analyse();
+	if (p.second.has_value()) {
+		fmt::print(stderr, "Syntactic analysis error: {}\n", p.second.value());
+		exit(2);
+	}
+	auto quad = p.first;
+    c0::Generator generator(quad);
+    generator.Generate();
+    return;
+}
+
 int main(int argc, char** argv) {
 	argparse::ArgumentParser program("c0");
 	program.add_argument("input")
 		.help("speicify the file to be compiled.");
-	program.add_argument("-t")
-		.default_value(false)
-		.implicit_value(true)
-		.help("perform tokenization for the input file.");
+//	program.add_argument("-t")
+//		.default_value(false)
+//		.implicit_value(true)
+//		.help("perform tokenization for the input file.");
 	program.add_argument("-l")
 		.default_value(false)
 		.implicit_value(true)
 		.help("perform syntactic analysis for the input file.");
+	program.add_argument("-s")
+		.default_value(false)
+		.implicit_value(true)
+		.help("generate byte code for the input file.");
+	program.add_argument("-c")
+		.default_value(false)
+		.implicit_value(true)
+		.help("generate binary object file for the input file.");
 	program.add_argument("-o", "--output")
 		.required()
 		.default_value(std::string("-"))
@@ -91,14 +114,20 @@ int main(int argc, char** argv) {
 	}
 	else
 		output = &std::cout;
-	if (program["-t"] == true && program["-l"] == true) {
-		fmt::print(stderr, "You can only perform tokenization or syntactic analysis at one time.");
-		exit(2);
+//	if (program["-t"] == true && program["-l"] == true) {
+//		fmt::print(stderr, "You can only perform tokenization or syntactic analysis at one time.");
+//		exit(2);
+//	}
+//	if (program["-t"] == true) {
+//		Tokenize(*input, *output);
+//	}
+	if (program["-l"] == true) {
+		Analyse(*input, *output);
 	}
-	if (program["-t"] == true) {
-		Tokenize(*input, *output);
+	else if (program["-s"] == true) {
+		Compile(*input, *output);
 	}
-	else if (program["-l"] == true) {
+	else if (program["-c"] == true) {
 		Analyse(*input, *output);
 	}
 	else {

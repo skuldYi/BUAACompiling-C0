@@ -18,7 +18,9 @@ set(lib_src
 	analyser/analyser.cpp
 	analyser/symbol.h
 	analyser/func.h
-        instruction/quadruple.h
+		generater/generator.h
+		generater/generator.cpp
+	instruction/quadruple.h
 )
 
 set(main_src
