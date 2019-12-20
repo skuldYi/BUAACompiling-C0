@@ -42,7 +42,8 @@ namespace miniplc0 {
         ErrSyntaxError,
         ErrFunctionNotDefined,
         ErrInvalidFunctionCall,
-        ErrInvalidReturnValue
+        ErrInvalidReturnValue,
+        ErrNeedReturnValue
     };
 
 	class CompilationError final{

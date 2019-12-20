@@ -37,10 +37,10 @@ namespace miniplc0 {
 		std::optional<CompilationError> analyseVariableDeclaration();
 		std::optional<CompilationError> analyseFunctionDefinition();
 
-		std::optional<CompilationError> analyseStatement();
-		std::optional<CompilationError> analyseCompoundStatement(bool funcBody);
+		std::optional<CompilationError> analyseStatement(bool& returned);
+		std::optional<CompilationError> analyseCompoundStatement(bool funcBody, bool& returned);
         std::optional<CompilationError> analyseCondition();
-        std::optional<CompilationError> analyseConditionStatement();
+        std::optional<CompilationError> analyseConditionStatement(bool& returned);
         std::optional<CompilationError> analyseLoopStatement();
         std::optional<CompilationError> analyseJumpStatement();
         std::optional<CompilationError> analysePrintStatement();

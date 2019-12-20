@@ -93,6 +93,9 @@ namespace fmt {
 			case miniplc0::ErrInvalidReturnValue:
 				name = "Return value has wrong type.";
 				break;
+			case miniplc0::ErrNeedReturnValue:
+				name = "Non-void function should return a value.";
+				break;
 			}
 			return format_to(ctx.out(), name);
 		}

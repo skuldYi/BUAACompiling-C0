@@ -211,9 +211,9 @@ namespace miniplc0 {
             peek = nextToken();
 
             if (mismatchType(peek, TokenType::RIGHT_PAREN)) {
-                // <parameter-declaration>{','<parameter-declaration>}
-                // <parameter-declaration> ::=
-                //    [<const-qualifier>]<type-specifier><identifier>
+            // <parameter-declaration>{','<parameter-declaration>}
+            // <parameter-declaration> ::=
+            //    [<const-qualifier>]<type-specifier><identifier>
                 while (true) {
                     bool isConst = false;
                     if (!mismatchType(peek, TokenType::CONST)) {
@@ -253,9 +253,18 @@ namespace miniplc0 {
 
             addInstruction(Operation::FUNC, name, std::to_string(getFuncParaSize(name)), "1");
 
-            auto err = analyseCompoundStatement(true);
+//            debugOut("1");
+            bool returned;
+            auto err = analyseCompoundStatement(true, returned);
             if (err.has_value())
                 return err;
+
+//            debugOut("2");
+            if (type.value() != SymbolType::Void && !returned) {
+                return makeCE(ErrorCode::ErrNeedReturnValue);
+            }
+
+            return {};
         }
     }
 
@@ -269,7 +278,9 @@ namespace miniplc0 {
     //    |<assignment-expression>';' // <id> '='
     //    |<function-call>';'     // <id> '('
     //    |';'
-    std::optional<CompilationError> Analyser::analyseStatement(){
+    std::optional<CompilationError> Analyser::analyseStatement(bool& returned){
+        returned = false;
+//        debugOut("5");
         if (!isStatementFirst(peek))
             return makeCE(ErrorCode::ErrNeedStatement);
 
@@ -280,11 +291,11 @@ namespace miniplc0 {
         // wrong peek will not reach here
         switch (peek.value().GetType()) {
             case TokenType::LEFT_BRACE:
-                err = analyseCompoundStatement(false);
+                err = analyseCompoundStatement(false, returned);
                 break;
 
             case TokenType::IF:
-                err = analyseConditionStatement();
+                err = analyseConditionStatement(returned);
                 break;
 
             case TokenType::WHILE:
@@ -293,6 +304,7 @@ namespace miniplc0 {
 
             case TokenType::RETURN:
                 err = analyseJumpStatement();
+                returned = true;
                 break;
 
             case TokenType::PRINT:
@@ -336,8 +348,11 @@ namespace miniplc0 {
     }
 
     // '{' {<variable-declaration>} {<statement>} '}'
-    std::optional<CompilationError> Analyser::analyseCompoundStatement(bool funcBody) {
+    std::optional<CompilationError> Analyser::analyseCompoundStatement(bool funcBody, bool& returned) {
 //        debugOut("analyse compound statement");
+        returned = false;
+//        debugOut("3");
+
         if (!funcBody)
             setSymbolTable();
 
@@ -351,9 +366,12 @@ namespace miniplc0 {
 
         // statement-seq
         while (isStatementFirst(peek)) {
-            err = analyseStatement();
+//            debugOut("4");
+            bool stateReturned;
+            err = analyseStatement(stateReturned);
             if (err.has_value())
                 return err;
+            returned |= stateReturned;
         }
 
         if (mismatchType(peek, TokenType::RIGHT_BRACE))
@@ -415,7 +433,7 @@ namespace miniplc0 {
     }
 
     // 'if' '(' <condition> ')' <statement> ['else' <statement>]
-    std::optional<CompilationError> Analyser::analyseConditionStatement() {
+    std::optional<CompilationError> Analyser::analyseConditionStatement(bool& returned) {
         /*
          *  condition
          *  BZ #label-else
@@ -452,22 +470,24 @@ namespace miniplc0 {
 
         addInstruction(Operation::BZ, labelElse);
         // if-statements
-        err = analyseStatement();
+        err = analyseStatement(returned);
         if (err.has_value())
             return err;
 
+        bool elseReturned = false;
         if (!mismatchType(peek, TokenType::ELSE)) {
             std::string labelEnd = getLabel();
             addInstruction(Operation::GOTO, labelEnd);
             addInstruction(Operation::LAB, labelElse);
             peek = nextToken();
-            err = analyseStatement();
+            err = analyseStatement(elseReturned);
             if (err.has_value())
                 return err;
             addInstruction(Operation::LAB, labelEnd);
         } else {
             addInstruction(Operation::LAB, labelElse);
         }
+        returned &= elseReturned;
 
         return std::optional<CompilationError>();
     }
@@ -505,7 +525,9 @@ namespace miniplc0 {
         addInstruction(Operation::BZ, labelEnd);
 
         // while-statement
-        err = analyseStatement();
+        // not used, for while-statement may not be executed
+        bool returned;
+        err = analyseStatement(returned);
         if (err.has_value())
             return err;
 
