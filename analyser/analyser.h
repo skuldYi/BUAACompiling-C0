@@ -1,7 +1,7 @@
 #pragma once
 
 #include "error/error.h"
-#include "instruction/instruction.h"
+#include "instruction/quadruple.h"
 #include "tokenizer/token.h"
 #include "func.h"
 
@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <cstddef> // for std::size_t
 
-namespace miniplc0 {
+namespace c0 {
 	class Analyser final {
 	private:
 		using uint64_t = std::uint64_t;
@@ -28,7 +28,7 @@ namespace miniplc0 {
 		Analyser& operator=(Analyser) = delete;
 
 		// 唯一接口
-		std::pair<std::vector<Instruction>, std::optional<CompilationError>> Analyse();
+		std::pair<std::vector<Quadruple>, std::optional<CompilationError>> Analyse();
 
 	private:
 		// 所有的递归子程序
@@ -57,7 +57,7 @@ namespace miniplc0 {
 		// Token 缓冲区
         std::vector<Token> _tokens;
         std::size_t _offset;
-        std::vector<Instruction> _instructions;
+        std::vector<Quadruple> _instructions;
         std::pair<uint64_t, uint64_t> _current_pos;
         std::optional<Token> peek;
 
@@ -102,9 +102,9 @@ namespace miniplc0 {
         std::string getLabel() {
             return "@" + std::to_string(label++);
         }
-        void addInstruction(Operation opr, const std::string& x);
-        void addInstruction(Operation opr, const std::string& x, const std::string& y);
-        void addInstruction(Operation opr, const std::string& x, const std::string& y, const std::string& r);
+        void addInstruction(QuadOpr opr, const std::string& x);
+        void addInstruction(QuadOpr opr, const std::string& x, const std::string& y);
+        void addInstruction(QuadOpr opr, const std::string& x, const std::string& y, const std::string& r);
         std::string getOpr(std::string);
 	};
 }

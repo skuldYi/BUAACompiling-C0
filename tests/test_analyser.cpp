@@ -1,5 +1,5 @@
 #include "analyser/analyser.h"
-#include "instruction/instruction.h"
+#include "instruction/quadruple.h"
 #include "tokenizer/tokenizer.h"
 
 #include <sstream>
@@ -9,11 +9,11 @@
 #include "fmts.hpp"
 #include "simple_vm.hpp"
 std::ostream& operator<<(std::ostream& os,
-                         miniplc0::CompilationError const& t) {
+                         c0::CompilationError const& t) {
     os << fmt::format("{}", t);
     return os;
 }
-std::ostream& operator<<(std::ostream& os, miniplc0::Instruction const& t) {
+std::ostream& operator<<(std::ostream& os, c0::Quadruple const& t) {
     os << fmt::format("{}", t);
     return os;
 }
@@ -34,13 +34,13 @@ std::ostream& operator<<(std::ostream& os, miniplc0::Instruction const& t) {
 // };
 #include "catch2/catch.hpp"
 
-std::pair<std::vector<miniplc0::Instruction>,
-        std::optional<miniplc0::CompilationError>>
+std::pair<std::vector<c0::Quadruple>,
+        std::optional<c0::CompilationError>>
 analyze(std::string& input) {
     std::stringstream ss(input);
-    miniplc0::Tokenizer lexer(ss);
+    c0::Tokenizer lexer(ss);
     auto tokens = lexer.AllTokens();
-    miniplc0::Analyser parser(tokens.first);
+    c0::Analyser parser(tokens.first);
     return parser.Analyse();
 }
 
@@ -58,9 +58,9 @@ std::string input =
         "end";
 auto result = analyze(input);
 
-std::vector<miniplc0::Instruction> expected = {
-        miniplc0::Instruction(miniplc0::Operation::LIT, 1),
-        // miniplc0::Instruction(miniplc0::Operation::STO, 0),
+std::vector<c0::Quadruple> expected = {
+        c0::Quadruple(c0::QuadOpr::LIT, 1),
+        // c0::Quadruple(c0::QuadOpr::STO, 0),
 };
 
 REQUIRE(result.first == expected);
@@ -76,14 +76,14 @@ std::string input =
         "end";
 auto result = analyze(input);
 
-// std::vector<miniplc0::Instruction> expected = {
-//     miniplc0::Instruction(miniplc0::Operation::LIT, 1),
-//     miniplc0::Instruction(miniplc0::Operation::STO, 0),
+// std::vector<c0::Quadruple> expected = {
+//     c0::Quadruple(c0::QuadOpr::LIT, 1),
+//     c0::Quadruple(c0::QuadOpr::STO, 0),
 // };
 
 // spotted in tests - remember positions start at zero!
-auto expected = miniplc0::CompilationError(
-        2, 6, miniplc0::ErrorCode::ErrAssignToConstant);
+auto expected = c0::CompilationError(
+        2, 6, c0::ErrorCode::ErrAssignToConstant);
 
 REQUIRE(result.second.value() == expected);
 }
@@ -95,9 +95,9 @@ std::string input =
         "end";
 auto result = analyze(input);
 
-std::vector<miniplc0::Instruction> expected = {
-        miniplc0::Instruction(miniplc0::Operation::LIT, 1),
-        // miniplc0::Instruction(miniplc0::Operation::STO, 0),
+std::vector<c0::Quadruple> expected = {
+        c0::Quadruple(c0::QuadOpr::LIT, 1),
+        // c0::Quadruple(c0::QuadOpr::STO, 0),
 };
 
 REQUIRE(result.first == expected);
@@ -113,11 +113,11 @@ std::string input =
         "end";
 auto result = analyze(input);
 
-std::vector<miniplc0::Instruction> expected = {
-        miniplc0::Instruction(miniplc0::Operation::LIT, 1),
-        // miniplc0::Instruction(miniplc0::Operation::STO, 0),
-        miniplc0::Instruction(miniplc0::Operation::LIT, 2),
-        miniplc0::Instruction(miniplc0::Operation::STO, 0),
+std::vector<c0::Quadruple> expected = {
+        c0::Quadruple(c0::QuadOpr::LIT, 1),
+        // c0::Quadruple(c0::QuadOpr::STO, 0),
+        c0::Quadruple(c0::QuadOpr::LIT, 2),
+        c0::Quadruple(c0::QuadOpr::STO, 0),
 };
 
 REQUIRE(result.first == expected);
@@ -133,11 +133,11 @@ std::string input =
         "end";
 auto result = analyze(input);
 
-std::vector<miniplc0::Instruction> expected = {
-        miniplc0::Instruction(miniplc0::Operation::LIT, 0),
-        // miniplc0::Instruction(miniplc0::Operation::STO, 0),
-        miniplc0::Instruction(miniplc0::Operation::LIT, 1),
-        // miniplc0::Instruction(miniplc0::Operation::STO, 1),
+std::vector<c0::Quadruple> expected = {
+        c0::Quadruple(c0::QuadOpr::LIT, 0),
+        // c0::Quadruple(c0::QuadOpr::STO, 0),
+        c0::Quadruple(c0::QuadOpr::LIT, 1),
+        // c0::Quadruple(c0::QuadOpr::STO, 1),
 };
 
 REQUIRE(result.first == expected);
@@ -154,13 +154,13 @@ std::string input =
         "end";
 auto result = analyze(input);
 
-std::vector<miniplc0::Instruction> expected = {
-        miniplc0::Instruction(miniplc0::Operation::LIT, 0),
-        // miniplc0::Instruction(miniplc0::Operation::STO, 0),
-        miniplc0::Instruction(miniplc0::Operation::LIT, 1),
-        // miniplc0::Instruction(miniplc0::Operation::STO, 1),
-        miniplc0::Instruction(miniplc0::Operation::LIT, 2),
-        miniplc0::Instruction(miniplc0::Operation::STO, 0),
+std::vector<c0::Quadruple> expected = {
+        c0::Quadruple(c0::QuadOpr::LIT, 0),
+        // c0::Quadruple(c0::QuadOpr::STO, 0),
+        c0::Quadruple(c0::QuadOpr::LIT, 1),
+        // c0::Quadruple(c0::QuadOpr::STO, 1),
+        c0::Quadruple(c0::QuadOpr::LIT, 2),
+        c0::Quadruple(c0::QuadOpr::STO, 0),
 };
 
 REQUIRE(result.first == expected);
@@ -181,7 +181,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -203,7 +203,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -228,7 +228,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -253,7 +253,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -278,7 +278,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -303,7 +303,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -327,7 +327,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -350,7 +350,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -368,7 +368,7 @@ std::string input =
 auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
-REQUIRE(result.second.value().GetCode() == miniplc0::ErrorCode::ErrNoBegin);
+REQUIRE(result.second.value().GetCode() == c0::ErrorCode::ErrNoBegin);
 }
 
 TEST_CASE("ENoEnd: Main should has 'end'") {
@@ -379,7 +379,7 @@ std::string input =
 auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
-REQUIRE(result.second.value().GetCode() == miniplc0::ErrorCode::ErrNoEnd);
+REQUIRE(result.second.value().GetCode() == c0::ErrorCode::ErrNoEnd);
 }
 
 TEST_CASE("ENoEnd: consts should appear before vars") {
@@ -391,7 +391,7 @@ std::string input =
 auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
-REQUIRE(result.second.value().GetCode() == miniplc0::ErrorCode::ErrNoEnd);
+REQUIRE(result.second.value().GetCode() == c0::ErrorCode::ErrNoEnd);
 }
 
 TEST_CASE("EConstantNeedValue: Constants must be initialized") {
@@ -403,7 +403,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrConstantNeedValue);
+c0::ErrorCode::ErrConstantNeedValue);
 }
 
 TEST_CASE("EConstantNeedValue: Constants must be assigned with numbers") {
@@ -416,7 +416,7 @@ auto result = analyze(input);
 // * This really is reported as "Need Semicolon". Not wrong.
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 
 TEST_CASE("EConstantNeedValue: Constants must be initialized (EOF)") {
@@ -427,7 +427,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrConstantNeedValue);
+c0::ErrorCode::ErrConstantNeedValue);
 }
 
 TEST_CASE("ENeedIdentifier: Variable declaration need identifiers") {
@@ -440,7 +440,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNeedIdentifier);
+c0::ErrorCode::ErrNeedIdentifier);
 }
 SECTION("Variable declaration") {
 std::string input =
@@ -451,7 +451,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNeedIdentifier);
+c0::ErrorCode::ErrNeedIdentifier);
 }
 SECTION("Variable declaration (EOL)") {
 std::string input =
@@ -462,7 +462,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNeedIdentifier);
+c0::ErrorCode::ErrNeedIdentifier);
 }
 SECTION("Constant declaration (EOF)") {
 std::string input =
@@ -472,7 +472,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNeedIdentifier);
+c0::ErrorCode::ErrNeedIdentifier);
 }
 SECTION("Variable declaration (EOF)") {
 std::string input =
@@ -482,7 +482,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNeedIdentifier);
+c0::ErrorCode::ErrNeedIdentifier);
 }
 }
 
@@ -496,7 +496,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNotDeclared);
+c0::ErrorCode::ErrNotDeclared);
 }
 
 SECTION("As RValue") {
@@ -508,7 +508,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNotDeclared);
+c0::ErrorCode::ErrNotDeclared);
 }
 }
 
@@ -522,7 +522,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNotInitialized);
+c0::ErrorCode::ErrNotInitialized);
 }
 
 TEST_CASE("EAssignToConstant: Const cannot be assigned") {
@@ -535,7 +535,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrAssignToConstant);
+c0::ErrorCode::ErrAssignToConstant);
 }
 
 TEST_CASE("EDuplicateDeclaration: Variables are declared only once") {
@@ -549,7 +549,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrDuplicateDeclaration);
+c0::ErrorCode::ErrDuplicateDeclaration);
 }
 SECTION("Crashing consts with vars") {
 std::string input =
@@ -561,7 +561,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrDuplicateDeclaration);
+c0::ErrorCode::ErrDuplicateDeclaration);
 }
 SECTION("Crashing vars with vars") {
 std::string input =
@@ -573,7 +573,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrDuplicateDeclaration);
+c0::ErrorCode::ErrDuplicateDeclaration);
 }
 }
 
@@ -587,7 +587,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 
 SECTION("Semicolon in var declaration") {
@@ -599,7 +599,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 
 SECTION("Semicolon in expression") {
@@ -612,7 +612,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 
 SECTION("Semicolon in print statement") {
@@ -624,7 +624,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 SECTION("Semicolon in const declaration (EOF)") {
 std::string input =
@@ -634,7 +634,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 
 SECTION("Semicolon in var declaration (EOF)") {
@@ -645,7 +645,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 
 SECTION("Semicolon in expression (EOF)") {
@@ -657,7 +657,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 
 SECTION("Semicolon in print statement (EOF)") {
@@ -668,7 +668,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrNoSemicolon);
+c0::ErrorCode::ErrNoSemicolon);
 }
 }
 
@@ -682,7 +682,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("In assignment (EOF)") {
 std::string input =
@@ -693,7 +693,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("In constant number literals - no number") {
 std::string input =
@@ -704,7 +704,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("In constant number literals - no number (EOF)") {
 std::string input =
@@ -715,7 +715,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("In constant number literals - no sign or number") {
 std::string input =
@@ -726,7 +726,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("In constant number literals - no sign or number (EOF)") {
 std::string input =
@@ -736,7 +736,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("After a additive operator") {
 std::string input =
@@ -747,7 +747,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("After a multiplicative operator") {
 std::string input =
@@ -758,7 +758,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("After a additive operator (EOF)") {
 std::string input =
@@ -768,7 +768,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("After a multiplicative operator (EOF)") {
 std::string input =
@@ -778,7 +778,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("With parentheses") {
 std::string input =
@@ -789,7 +789,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("With parentheses (EOF)") {
 std::string input =
@@ -799,7 +799,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 SECTION("One more test (EOF)") {
 std::string input =
@@ -809,7 +809,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIncompleteExpression);
+c0::ErrorCode::ErrIncompleteExpression);
 }
 }
 TEST_CASE("EInvalidPrint: When parameters don't match") {
@@ -822,7 +822,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidPrint);
+c0::ErrorCode::ErrInvalidPrint);
 }
 SECTION("Right parenthesis") {
 std::string input =
@@ -833,7 +833,7 @@ auto result = analyze(input);
 
 REQUIRE(result.second.has_value());
 REQUIRE(result.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidPrint);
+c0::ErrorCode::ErrInvalidPrint);
 }
 }
 
@@ -858,7 +858,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -880,7 +880,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();
@@ -909,7 +909,7 @@ auto result = analyze(input);
 
 REQUIRE_FALSE(result.second.has_value());
 
-auto vm = miniplc0::VM(result.first);
+auto vm = c0::VM(result.first);
 CAPTURE(result.first);
 
 auto vm_result = vm.Run();

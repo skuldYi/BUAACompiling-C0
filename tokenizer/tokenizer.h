@@ -13,7 +13,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace miniplc0 {
+namespace c0 {
 
 	class Tokenizer final {
 	private:

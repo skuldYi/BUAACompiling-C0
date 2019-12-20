@@ -1,6 +1,6 @@
 #pragma once
 
-#include "instruction/instruction.h"
+#include "instruction/quadruple.h"
 
 #include <array>
 #include <vector>
@@ -8,15 +8,15 @@
 #include <string>
 #include <climits>
 
-namespace miniplc0 {
-	// This is a simplified version of miniplc0 vm implementation for testing.
+namespace c0 {
+	// This is a simplified version of c0 vm implementation for testing.
 	class VM {
 	private:
 		using uint64_t = std::uint64_t;
 		using int32_t = std::int32_t;
 		using int64_t = std::int64_t;
 	public:
-		VM(std::vector<Instruction> v) : _codes(std::move(v)), _stack(2048, 0), _ip(0), _sp(0) {}
+		VM(std::vector<Quadruple> v) : _codes(std::move(v)), _stack(2048, 0), _ip(0), _sp(0) {}
 		VM(const VM&) = delete;
 		VM(VM&&) = delete;
 		VM& operator=(VM) = delete;
@@ -28,38 +28,38 @@ namespace miniplc0 {
 				auto x = it.GetX();
 				switch (it.GetOperation())
 				{
-				case Operation::ILL:
+				case QuadOpr::ILL:
 					throw std::out_of_range("ILL");
 					break;
-				case Operation::LIT:
+				case QuadOpr::LIT:
 					_stack[_sp] = x;
 					_sp++;
 					break;
-				case Operation::LOD:
+				case QuadOpr::LOD:
 					_stack[_sp] = _stack[x];
 					_sp++;
 					break;
-				case Operation::STO:
+				case QuadOpr::STO:
 					_stack[x] = _stack[_sp-1];
 					_sp--;
 					break;
-				case Operation::ADD:
+				case QuadOpr::ADD:
 					_stack[_sp - 2] = add(_stack[_sp - 2], _stack[_sp - 1]);
 					_sp--;
 					break;
-				case Operation::SUB:
+				case QuadOpr::SUB:
 					_stack[_sp - 2] = sub(_stack[_sp - 2], _stack[_sp - 1]);
 					_sp--;
 					break;
-				case Operation::DIV:
+				case QuadOpr::DIV:
 					_stack[_sp - 2] = div(_stack[_sp - 2], _stack[_sp - 1]);
 					_sp--;
 					break;
-				case Operation::MUL:
+				case QuadOpr::MUL:
 					_stack[_sp - 2] = mul(_stack[_sp - 2], _stack[_sp - 1]);
 					_sp--;
 					break;
-				case Operation::WRT:
+				case QuadOpr::WRT:
 					v.emplace_back(_stack[_sp - 1]);
 					_sp--;
 					break;
@@ -101,7 +101,7 @@ namespace miniplc0 {
 		}
 
 	private:
-		std::vector<Instruction> _codes;
+		std::vector<Quadruple> _codes;
 		std::vector<int32_t> _stack;
 		uint64_t _ip;
 		uint64_t _sp;

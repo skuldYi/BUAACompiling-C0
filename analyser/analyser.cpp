@@ -4,7 +4,7 @@
 #define makeCE(ErrCode) std::make_optional<CompilationError>(_current_pos, ErrCode)
 #define debugOut(s) std::cout << s << std::endl
 
-namespace miniplc0 {
+namespace c0 {
     bool mismatchType(std::optional<Token> token, TokenType type) {
         return (!token.has_value() || token.value().GetType() != type);
     }
@@ -52,10 +52,10 @@ namespace miniplc0 {
               || type == TokenType::EQUAL_SIGN  || type == TokenType::NOTEQUAL_SIGN;
     }
 
-	std::pair<std::vector<Instruction>, std::optional<CompilationError>> Analyser::Analyse() {
+	std::pair<std::vector<Quadruple>, std::optional<CompilationError>> Analyser::Analyse() {
 		auto err = analyseProgram();
 		if (err.has_value())
-			return std::make_pair(std::vector<Instruction>(), err);
+			return std::make_pair(std::vector<Quadruple>(), err);
 		else
 			return std::make_pair(_instructions, std::optional<CompilationError>());
 	}
@@ -155,7 +155,7 @@ namespace miniplc0 {
                     auto err = analyseExpression(value);
                     if (err.has_value())
                         return err;
-                    addInstruction(Operation::ASN, value, "", id.value().GetValueString());
+                    addInstruction(QuadOpr::ASN, value, "", id.value().GetValueString());
                 }
 
                 if (mismatchType(peek, TokenType::COMMA))
@@ -251,7 +251,7 @@ namespace miniplc0 {
             }
             peek = nextToken();
 
-            addInstruction(Operation::FUNC, "@" + name, "$" + std::to_string(getFuncParaSize(name)), "$1");
+            addInstruction(QuadOpr::FUNC, "@" + name, "$" + std::to_string(getFuncParaSize(name)), "$1");
 
 //            debugOut("1");
             bool returned;
@@ -265,7 +265,7 @@ namespace miniplc0 {
             }
 
             if (funcType.value() == SymbolType::Void && !returned)
-                addInstruction(Operation::RET, "");
+                addInstruction(QuadOpr::RET, "");
         }
     }
 
@@ -401,25 +401,25 @@ namespace miniplc0 {
             if (err.has_value())
                 return err;
 
-            Operation op;
+            QuadOpr op;
             switch (relation.GetType()) {
                 case TokenType::LESS_SIGN:
-                    op = Operation::LT;
+                    op = QuadOpr::LT;
                     break;
                 case TokenType::LESSEQUAL_SIGN:
-                    op = Operation::LE;
+                    op = QuadOpr::LE;
                     break;
                 case TokenType::GREATER_SIGN:
-                    op = Operation::GT;
+                    op = QuadOpr::GT;
                     break;
                 case TokenType::GREATEREQUAL_SIGN:
-                    op = Operation::GE;
+                    op = QuadOpr::GE;
                     break;
                 case TokenType::EQUAL_SIGN:
-                    op = Operation::EQU;
+                    op = QuadOpr::EQU;
                     break;
                 case TokenType::NOTEQUAL_SIGN:
-                    op = Operation::NE;
+                    op = QuadOpr::NE;
                     break;
                 default:
                     return makeCE(ErrorCode::ErrSyntaxError);
@@ -427,7 +427,7 @@ namespace miniplc0 {
 
             addInstruction(op, opr1, opr2);
         } else {
-            addInstruction(Operation::NE, opr1, "$0");
+            addInstruction(QuadOpr::NE, opr1, "$0");
         }
 
         return {};
@@ -469,7 +469,7 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
 
-        addInstruction(Operation::BZ, labelElse);
+        addInstruction(QuadOpr::BZ, labelElse);
         // if-statements
         err = analyseStatement(returned);
         if (err.has_value())
@@ -478,15 +478,15 @@ namespace miniplc0 {
         bool elseReturned = false;
         if (!mismatchType(peek, TokenType::ELSE)) {
             std::string labelEnd = getLabel();
-            addInstruction(Operation::GOTO, labelEnd);
-            addInstruction(Operation::LAB, labelElse);
+            addInstruction(QuadOpr::GOTO, labelEnd);
+            addInstruction(QuadOpr::LAB, labelElse);
             peek = nextToken();
             err = analyseStatement(elseReturned);
             if (err.has_value())
                 return err;
-            addInstruction(Operation::LAB, labelEnd);
+            addInstruction(QuadOpr::LAB, labelEnd);
         } else {
-            addInstruction(Operation::LAB, labelElse);
+            addInstruction(QuadOpr::LAB, labelElse);
         }
         returned &= elseReturned;
 
@@ -509,7 +509,7 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrSyntaxError);
         peek = nextToken();
 
-        addInstruction(Operation::LAB, labelBegin);
+        addInstruction(QuadOpr::LAB, labelBegin);
 
         if (mismatchType(peek, TokenType::LEFT_PAREN))
             return makeCE(ErrorCode::ErrIncompleteExpression);
@@ -523,7 +523,7 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
 
-        addInstruction(Operation::BZ, labelEnd);
+        addInstruction(QuadOpr::BZ, labelEnd);
 
         // while-statement
         // not used, for while-statement may not be executed
@@ -532,8 +532,8 @@ namespace miniplc0 {
         if (err.has_value())
             return err;
 
-        addInstruction(Operation::GOTO, labelBegin);
-        addInstruction(Operation::LAB, labelEnd);
+        addInstruction(QuadOpr::GOTO, labelBegin);
+        addInstruction(QuadOpr::LAB, labelEnd);
 
         return std::optional<CompilationError>();
     }
@@ -563,7 +563,7 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrNoSemicolon);
         peek = nextToken();
 
-        addInstruction(Operation::RET, value);
+        addInstruction(QuadOpr::RET, value);
 
         if (type != SymbolType::Void && !hasRet)
             return makeCE(ErrorCode::ErrInvalidReturnValue);
@@ -588,28 +588,28 @@ namespace miniplc0 {
             // <printable> ::= <expression> | <string-literal> | <char-literal>
             while (true) {
                 if (!mismatchType(peek, TokenType::STRING)) {
-                    addInstruction(Operation::PRT, "@" + peek.value().GetValueString(), "@s");
+                    addInstruction(QuadOpr::PRT, "@" + peek.value().GetValueString(), "@s");
                     peek = nextToken();
                 } else if (!mismatchType(peek, TokenType::UNSIGNED_CHAR)) {
-                    addInstruction(Operation::PRT, "$" + peek.value().GetValueString(), "@c");
+                    addInstruction(QuadOpr::PRT, "$" + peek.value().GetValueString(), "@c");
                     peek = nextToken();
                 } else {
                     std::string value;
                     auto err = analyseExpression(value);
                     if (err.has_value())
                         return err;
-                    addInstruction(Operation::PRT, value, "@i");
+                    addInstruction(QuadOpr::PRT, value, "@i");
                 }
 
                 if (mismatchType(peek, TokenType::COMMA))
                     break;
                 else {
                     peek = nextToken();
-                    addInstruction(Operation::PRT, "$ ", "@c");
+                    addInstruction(QuadOpr::PRT, "$ ", "@c");
                 }
             }
         }
-        addInstruction(Operation::PRT, "", "@ln");
+        addInstruction(QuadOpr::PRT, "", "@ln");
 
 
         if (mismatchType(peek, TokenType::RIGHT_PAREN))
@@ -653,7 +653,7 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrNoSemicolon);
         peek = nextToken();
 
-        addInstruction(Operation::SCN, id);
+        addInstruction(QuadOpr::SCN, id);
         return std::optional<CompilationError>();
     }
 
@@ -680,7 +680,7 @@ namespace miniplc0 {
         if (err.has_value())
             return err;
 
-        addInstruction(Operation::ASN, value, "", id);
+        addInstruction(QuadOpr::ASN, value, "", id);
         initVariable(id);
 
         return {};
@@ -709,7 +709,7 @@ namespace miniplc0 {
                 if (err.has_value())
                     return err;
                 paraNum++;
-                addInstruction(Operation::PUSH, para);
+                addInstruction(QuadOpr::PUSH, para);
 
                 if (mismatchType(peek, TokenType::COMMA))
                     break;
@@ -726,15 +726,15 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
 
-        addInstruction(Operation::CAL, "@" + id);
+        addInstruction(QuadOpr::CAL, "@" + id);
 
         // function has a void return value will not be a factor
         if (useRet) {
             std::string returnValue = getTempName();
-            addInstruction(Operation::ASN, "", "", returnValue);
+            addInstruction(QuadOpr::ASN, "", "", returnValue);
             ret = returnValue;
         } else if (getSymbolType(id) != SymbolType::Void) {
-            addInstruction(Operation::POP, "$1");
+            addInstruction(QuadOpr::POP, "$1");
         }
 
 
@@ -763,9 +763,9 @@ namespace miniplc0 {
 
             std::string tmp = getTempName(term1, term2);
             if (type == TokenType::PLUS_SIGN)
-                addInstruction(Operation::ADD, term1, term2, tmp);
+                addInstruction(QuadOpr::ADD, term1, term2, tmp);
             else if (type == TokenType::MINUS_SIGN)
-                addInstruction(Operation::SUB, term1, term2, tmp);
+                addInstruction(QuadOpr::SUB, term1, term2, tmp);
 
             term1 = tmp;
 		}
@@ -797,9 +797,9 @@ namespace miniplc0 {
 
             std::string tmp = getTempName(factor1, factor2);
             if (type == TokenType::MULTIPLICATION_SIGN)
-                addInstruction(Operation::MUL, factor1, factor2, tmp);
+                addInstruction(QuadOpr::MUL, factor1, factor2, tmp);
             else if (type == TokenType::DIVISION_SIGN)
-                addInstruction(Operation::DIV, factor1, factor2, tmp);
+                addInstruction(QuadOpr::DIV, factor1, factor2, tmp);
 
             factor1 = tmp;
         }
@@ -907,7 +907,7 @@ namespace miniplc0 {
 		std::string tmp;
 		if (prefix == -1) {
 		    tmp = getTempName(ret1);
-		    addInstruction(Operation::NEG, ret1, "", tmp);
+		    addInstruction(QuadOpr::NEG, ret1, "", tmp);
         } else {
 		    tmp = ret1;
 		}
@@ -1063,15 +1063,15 @@ namespace miniplc0 {
         }
     }
 
-    void Analyser::addInstruction(Operation opr, const std::string& x) {
+    void Analyser::addInstruction(QuadOpr opr, const std::string& x) {
         _instructions.emplace_back(opr, getOpr(x));
     }
 
-    void Analyser::addInstruction(Operation opr, const std::string& x, const std::string& y) {
+    void Analyser::addInstruction(QuadOpr opr, const std::string& x, const std::string& y) {
         _instructions.emplace_back(opr, getOpr(x), getOpr(y));
     }
 
-    void Analyser::addInstruction(Operation opr, const std::string& x, const std::string& y, const std::string& r) {
+    void Analyser::addInstruction(QuadOpr opr, const std::string& x, const std::string& y, const std::string& r) {
         _instructions.emplace_back(opr, getOpr(x), getOpr(y), getOpr(r));
     }
 

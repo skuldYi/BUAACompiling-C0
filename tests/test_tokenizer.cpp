@@ -16,8 +16,8 @@ TEST_CASE("Test hello world.") {
 		"end\n";
 	std::stringstream ss;
 	ss.str(input);
-	miniplc0::Tokenizer tkz(ss);
-	std::vector<miniplc0::Token> output = {};
+	c0::Tokenizer tkz(ss);
+	std::vector<c0::Token> output = {};
 	auto result = tkz.AllTokens();
 	if (result.second.has_value()) {
 		FAIL();
@@ -29,20 +29,20 @@ TEST_CASE("Test hello world.") {
 TEST_CASE("Test keywords") {
 std::string input = "begin end var const print";
 std::stringstream ss(input);
-miniplc0::Tokenizer lexer(ss);
+c0::Tokenizer lexer(ss);
 auto result = lexer.AllTokens();
 
-std::vector<miniplc0::Token> expected = {
-        miniplc0::Token(miniplc0::TokenType::BEGIN, std::string("begin"), {0, 0},
-                        {0, 5}),
-        miniplc0::Token(miniplc0::TokenType::END, std::string("end"), {0, 6},
-                        {0, 9}),
-        miniplc0::Token(miniplc0::TokenType::VAR, std::string("var"), {0, 10},
-                        {0, 13}),
-        miniplc0::Token(miniplc0::TokenType::CONST, std::string("const"), {0, 14},
-                        {0, 19}),
-        miniplc0::Token(miniplc0::TokenType::PRINT, std::string("print"), {0, 20},
-                        {0, 25}),
+std::vector<c0::Token> expected = {
+        c0::Token(c0::TokenType::BEGIN, std::string("begin"), {0, 0},
+                  {0, 5}),
+        c0::Token(c0::TokenType::END, std::string("end"), {0, 6},
+                  {0, 9}),
+        c0::Token(c0::TokenType::VAR, std::string("var"), {0, 10},
+                  {0, 13}),
+        c0::Token(c0::TokenType::CONST, std::string("const"), {0, 14},
+                  {0, 19}),
+        c0::Token(c0::TokenType::PRINT, std::string("print"), {0, 20},
+                  {0, 25}),
 };
 
 if (result.second.has_value()) {
@@ -62,21 +62,21 @@ REQUIRE(result.first == expected);
 TEST_CASE("Test regular numbers") {
 std::string input = "1 -1 999";
 std::stringstream ss(input);
-miniplc0::Tokenizer lexer(ss);
+c0::Tokenizer lexer(ss);
 auto result = lexer.AllTokens();
 
-std::vector<miniplc0::Token> expected = {
-        miniplc0::Token(miniplc0::TokenType::UNSIGNED_INTEGER, (int32_t)1, {0, 0},
-                        {0, 1}),
-        miniplc0::Token(miniplc0::TokenType::MINUS_SIGN, '-', {0, 2}, {0, 3}),
+std::vector<c0::Token> expected = {
+        c0::Token(c0::TokenType::UNSIGNED_INTEGER, (int32_t)1, {0, 0},
+                  {0, 1}),
+        c0::Token(c0::TokenType::MINUS_SIGN, '-', {0, 2}, {0, 3}),
         // minus sign is parsed as separate token
-        miniplc0::Token(miniplc0::TokenType::UNSIGNED_INTEGER, (int32_t)1, {0, 3},
-                        {0, 4}),
-        miniplc0::Token(miniplc0::TokenType::UNSIGNED_INTEGER, (int32_t)999,
-                        {0, 5}, {0, 8}),
+        c0::Token(c0::TokenType::UNSIGNED_INTEGER, (int32_t)1, {0, 3},
+                  {0, 4}),
+        c0::Token(c0::TokenType::UNSIGNED_INTEGER, (int32_t)999,
+                  {0, 5}, {0, 8}),
 };
 
-// miniplc0::CompilationError expected_err()
+// c0::CompilationError expected_err()
 
 if (result.second.has_value()) {
 FAIL("Error introduced in lexing keywords");
@@ -86,19 +86,19 @@ REQUIRE(result.first == expected);
 }
 
 TEST_CASE("Test Identifiers") {
-std::vector<std::pair<std::string, miniplc0::Token>> cases = {
-        {"a", miniplc0::Token(miniplc0::TokenType::IDENTIFIER, std::string("a"),
-                              {0, 0}, {0, 1})},
-        {"abc123", miniplc0::Token(miniplc0::TokenType::IDENTIFIER,
-                                   std::string("abc123"), {0, 0}, {0, 6})},
-        {"ull", miniplc0::Token(miniplc0::TokenType::IDENTIFIER,
-                                std::string("ull"), {0, 0}, {0, 3})},
+std::vector<std::pair<std::string, c0::Token>> cases = {
+        {"a",      c0::Token(c0::TokenType::IDENTIFIER, std::string("a"),
+                             {0, 0}, {0, 1})},
+        {"abc123", c0::Token(c0::TokenType::IDENTIFIER,
+                             std::string("abc123"), {0, 0}, {0, 6})},
+        {"ull",    c0::Token(c0::TokenType::IDENTIFIER,
+                             std::string("ull"), {0, 0}, {0, 3})},
 };
 
 for (auto& c : cases) {
 SECTION(fmt::format("case token: {}", c.first)) {
 std::stringstream in(c.first);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
@@ -110,13 +110,13 @@ REQUIRE(res.first.value() == c.second);
 TEST_CASE("Test Symbols") {
 auto s = "+-*/()=;";
 std::stringstream in(s);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 
 SECTION("Plus") {
 REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
-REQUIRE(res.first.value() == miniplc0::Token(miniplc0::TokenType::PLUS_SIGN,
+REQUIRE(res.first.value() == c0::Token(c0::TokenType::PLUS_SIGN,
 '+', {0, 0}, {0, 1}));
 }
 
@@ -126,7 +126,7 @@ REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
 REQUIRE(
         res.first.value() ==
-miniplc0::Token(miniplc0::TokenType::MINUS_SIGN, '-', {0, 1}, {0, 2}));
+c0::Token(c0::TokenType::MINUS_SIGN, '-', {0, 1}, {0, 2}));
 }
 
 res = lexer.NextToken();
@@ -134,7 +134,7 @@ SECTION("Mult") {
 REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
 REQUIRE(res.first.value() ==
-miniplc0::Token(miniplc0::TokenType::MULTIPLICATION_SIGN, '*',
+c0::Token(c0::TokenType::MULTIPLICATION_SIGN, '*',
 {0, 2}, {0, 3}));
 }
 
@@ -143,7 +143,7 @@ SECTION("Div") {
 REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
 REQUIRE(res.first.value() ==
-miniplc0::Token(miniplc0::TokenType::DIVISION_SIGN, '/', {0, 3},
+c0::Token(c0::TokenType::DIVISION_SIGN, '/', {0, 3},
 {0, 4}));
 }
 
@@ -152,7 +152,7 @@ SECTION("LParen") {
 REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
 REQUIRE(res.first.value() ==
-miniplc0::Token(miniplc0::TokenType::LEFT_BRACKET, '(', {0, 4},
+c0::Token(c0::TokenType::LEFT_BRACKET, '(', {0, 4},
 {0, 5}));
 }
 
@@ -161,7 +161,7 @@ SECTION("RParen") {
 REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
 REQUIRE(res.first.value() ==
-miniplc0::Token(miniplc0::TokenType::RIGHT_BRACKET, ')', {0, 5},
+c0::Token(c0::TokenType::RIGHT_BRACKET, ')', {0, 5},
 {0, 6}));
 }
 
@@ -171,14 +171,14 @@ REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
 REQUIRE(
         res.first.value() ==
-miniplc0::Token(miniplc0::TokenType::EQUAL_SIGN, '=', {0, 6}, {0, 7}));
+c0::Token(c0::TokenType::EQUAL_SIGN, '=', {0, 6}, {0, 7}));
 }
 
 res = lexer.NextToken();
 SECTION("Semicolon") {
 REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
-REQUIRE(res.first.value() == miniplc0::Token(miniplc0::TokenType::SEMICOLON,
+REQUIRE(res.first.value() == c0::Token(c0::TokenType::SEMICOLON,
 ';', {0, 7}, {0, 8}));
 }
 }
@@ -189,30 +189,30 @@ TEST_CASE("Test number overflow") {
 SECTION("Too large numbers obviously overflow") {
 std::string ins = "10000000000000000 ";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIntegerOverflow);
+c0::ErrorCode::ErrIntegerOverflow);
 }
 SECTION("2147483647 does not overflow") {
 std::string ins = "2147483647";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE_FALSE(res.second.has_value());
 REQUIRE(res.first.has_value());
 // REQUIRE(res.second.value().GetCode() ==
-// miniplc0::ErrorCode::ErrIntegerOverflow);
+// c0::ErrorCode::ErrIntegerOverflow);
 }
 SECTION("2147483648 overflows") {
 std::string ins = "2147483648";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrIntegerOverflow);
+c0::ErrorCode::ErrIntegerOverflow);
 }
 }
 
@@ -220,101 +220,101 @@ TEST_CASE("Test invalid characters") {
 SECTION("Single quotes") {
 std::string ins = "'";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 SECTION("Double quotes") {
 std::string ins = "\"";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 SECTION("Dollar") {
 std::string ins = "$";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 SECTION("At") {
 std::string ins = "@";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 SECTION("Hashtag") {
 std::string ins = "#";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 SECTION("Tilde") {
 std::string ins = "~";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 SECTION("Angled bracket") {
 std::string ins = "<";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 SECTION("Square bracket") {
 std::string ins = "<";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 SECTION("Backslash") {
 std::string ins = "\\";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidInput);
+c0::ErrorCode::ErrInvalidInput);
 }
 }
 
 TEST_CASE("EOF should be reported") {
 std::string ins = "";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
-REQUIRE(res.second.value().GetCode() == miniplc0::ErrorCode::ErrEOF);
+REQUIRE(res.second.value().GetCode() == c0::ErrorCode::ErrEOF);
 }
 
 TEST_CASE("EInvalidIdentifier: digit proceeded with letter") {
 std::string ins = "123abc";
 std::stringstream in(ins);
-miniplc0::Tokenizer lexer(in);
+c0::Tokenizer lexer(in);
 auto res = lexer.NextToken();
 REQUIRE(res.second.has_value());
 REQUIRE(res.second.value().GetCode() ==
-miniplc0::ErrorCode::ErrInvalidIdentifier);
+c0::ErrorCode::ErrInvalidIdentifier);
 }

@@ -13,7 +13,7 @@
         std::make_optional<Token>(type, value, pos, currentPos()),\
         std::optional<CompilationError>())
 
-namespace miniplc0 {
+namespace c0 {
     TokenType Tokenizer::idType (const std::string& s) {
         TokenType t;
         try {
@@ -81,15 +81,15 @@ namespace miniplc0 {
 				auto invalid = false;
 
 				// 使用了自己封装的判断字符类型的函数，定义于 tokenizer/utils.hpp
-				if (miniplc0::isblank(peek) || peek == '\n') {
+				if (c0::isblank(peek) || peek == '\n') {
 				    // 0x20 ' ', 0x09 '\t'
 				    peek = nextChar();
                     break;
 				} else if (peek == '0')
                     current_state = DFAState::ZERO_STATE;
-				else if (miniplc0::isdigit(peek))
+				else if (c0::isdigit(peek))
 					current_state = DFAState::UNSIGNED_INTEGER_STATE;
-				else if (miniplc0::isalpha(peek))
+				else if (c0::isalpha(peek))
 					current_state = DFAState::IDENTIFIER_STATE;
 				else {
 					switch (peek) {
@@ -146,9 +146,9 @@ namespace miniplc0 {
                     current_state = DFAState::HEX_INTEGER_STATE;
                     ss << 'x';
                     peek = nextChar();
-                } else if (miniplc0::isdigit(peek)) {
+                } else if (c0::isdigit(peek)) {
                     return makeCE(pos, ErrInvalidNumberFormat);
-                } else if (miniplc0::isalpha(peek)) {
+                } else if (c0::isalpha(peek)) {
                     return makeCE(pos, ErrInvalidIdentifier);
                 } else {
                     return makeTk(TokenType::UNSIGNED_INTEGER, (unsigned long) 0);
@@ -158,11 +158,11 @@ namespace miniplc0 {
 
 			case UNSIGNED_INTEGER_STATE: {
 				// will not get EOF
-				if (miniplc0::isdigit(peek)) {
+				if (c0::isdigit(peek)) {
 				// 如果读到的字符是数字，则存储读到的字符
 					ss << peek;
 					peek = nextChar();
-				} else if (miniplc0::isalpha(peek)) {
+				} else if (c0::isalpha(peek)) {
 					return makeCE(pos, ErrInvalidIdentifier);
 				} else {
 				// 将字符串解析为整数
@@ -176,10 +176,10 @@ namespace miniplc0 {
 			}
 
 			case HEX_INTEGER_STATE: {
-				if (miniplc0::isxdigit(peek)) {
+				if (c0::isxdigit(peek)) {
 					ss << peek;
 					peek = nextChar();
-				} else if (miniplc0::isalpha(peek)) {
+				} else if (c0::isalpha(peek)) {
 					return makeCE(pos, ErrInvalidNumberFormat);
 				} else {
 				// 将字符串解析为整数
@@ -193,7 +193,7 @@ namespace miniplc0 {
 			}
 
 			case IDENTIFIER_STATE: {
-                if (miniplc0::isdigit(peek) || miniplc0::isalpha(peek)) {
+                if (c0::isdigit(peek) || c0::isalpha(peek)) {
                     // 如果读到的是字符或字母，则存储读到的字符
                     ss << peek;
                     peek = nextChar();
@@ -378,7 +378,7 @@ namespace miniplc0 {
                         s += peek;
                         peek = nextChar();
                         s += peek;
-                        if (!miniplc0::isxdigit(s[0]) || !miniplc0::isxdigit(s[1]))
+                        if (!c0::isxdigit(s[0]) || !c0::isxdigit(s[1]))
                             return makeCE(pos, ErrInvalidCharacter);
                         escape = (char) std::stoi(s, 0, 16);
                         break;

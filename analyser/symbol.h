@@ -4,7 +4,7 @@
 #include <utility>
 #include <sstream>
 
-namespace miniplc0 {
+namespace c0 {
     enum SymbolType {
         Char,
         Int,
@@ -18,11 +18,11 @@ namespace miniplc0 {
 
     public:
 //
-//		Instruction() : Instruction(Operation::ILL, 0){}
-//		Instruction(const Instruction& i) { _opr = i._opr; _x = i._x; }
-//		Instruction(Instruction&& i) :Instruction() { swap(*this, i); }
-//		Instruction& operator=(Instruction i) { swap(*this, i); return *this; }
-//		bool operator==(const Instruction& i) const { return _opr == i._opr && _x == i._x; }
+//		Quadruple() : Quadruple(QuadOpr::ILL, 0){}
+//		Quadruple(const Quadruple& i) { _opr = i._opr; _x = i._x; }
+//		Quadruple(Quadruple&& i) :Quadruple() { swap(*this, i); }
+//		Quadruple& operator=(Quadruple i) { swap(*this, i); return *this; }
+//		bool operator==(const Quadruple& i) const { return _opr == i._opr && _x == i._x; }
 
         Symbol(std::string name, int32_t stackIndex, SymbolType type,
                bool isConst, bool isInited, int16_t funcIndex)

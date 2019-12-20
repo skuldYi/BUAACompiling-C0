@@ -5,7 +5,7 @@
 #include <sstream>
 #include "symbol.h"
 
-namespace miniplc0 {
+namespace c0 {
 
     class Func final {
     private:
@@ -13,11 +13,11 @@ namespace miniplc0 {
 
     public:
 //
-//		Instruction() : Instruction(Operation::ILL, 0){}
-//		Instruction(const Instruction& i) { _opr = i._opr; _x = i._x; }
-//		Instruction(Instruction&& i) :Instruction() { swap(*this, i); }
-//		Instruction& operator=(Instruction i) { swap(*this, i); return *this; }
-//		bool operator==(const Instruction& i) const { return _opr == i._opr && _x == i._x; }
+//		Quadruple() : Quadruple(QuadOpr::ILL, 0){}
+//		Quadruple(const Quadruple& i) { _opr = i._opr; _x = i._x; }
+//		Quadruple(Quadruple&& i) :Quadruple() { swap(*this, i); }
+//		Quadruple& operator=(Quadruple i) { swap(*this, i); return *this; }
+//		bool operator==(const Quadruple& i) const { return _opr == i._opr && _x == i._x; }
 
         Func(int paraSize, int level, SymbolType returnType) : _paraSize(paraSize), _level(level),
                                                                _returnType(returnType) {}
