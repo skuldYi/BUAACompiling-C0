@@ -100,11 +100,11 @@ namespace miniplc0 {
         std::string getTempName(const std::string&, const std::string&);
         int label = 0;
         std::string getLabel() {
-            return "#Label" + std::to_string(label++) + ":";
+            return "@" + std::to_string(label++);
         }
         void addInstruction(Operation opr, const std::string& x);
         void addInstruction(Operation opr, const std::string& x, const std::string& y);
         void addInstruction(Operation opr, const std::string& x, const std::string& y, const std::string& r);
-
+        std::string getOpr(std::string);
 	};
 }

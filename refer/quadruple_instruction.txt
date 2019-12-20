@@ -11,8 +11,7 @@ label a 	LAB		a
 foo(int a)	FUNC 	name	para_size	level
 foo(a)		PUSH	a
 			CAL		foo
-return a	RET 	a
-return		RET 	-
+return a	RET 	a/-
 
 a == b		EQU		a 		b 		
 a != b		NE		a 		b 		
@@ -24,10 +23,9 @@ a >= b		GE		a 		b
 满足跳转		BNZ 	LABEL1
 不满足跳转	BZ 		LABEL1
 
-print(a)	PRT 	a
+print(a)	PRT 	a 		i/c/s/ln
 scan(a)		SCN 	a
 pop{a}		POP 	a
 
 #TempVariable
 $ImmediateNumber
-@String

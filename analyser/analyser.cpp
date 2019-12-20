@@ -251,7 +251,7 @@ namespace miniplc0 {
             }
             peek = nextToken();
 
-            addInstruction(Operation::FUNC, name, std::to_string(getFuncParaSize(name)), "1");
+            addInstruction(Operation::FUNC, "@" + name, "$" + std::to_string(getFuncParaSize(name)), "$1");
 
 //            debugOut("1");
             bool returned;
@@ -588,28 +588,28 @@ namespace miniplc0 {
             // <printable> ::= <expression> | <string-literal> | <char-literal>
             while (true) {
                 if (!mismatchType(peek, TokenType::STRING)) {
-                    addInstruction(Operation::PRT, peek.value().GetValueString(), "s");
+                    addInstruction(Operation::PRT, "@" + peek.value().GetValueString(), "@s");
                     peek = nextToken();
                 } else if (!mismatchType(peek, TokenType::UNSIGNED_CHAR)) {
-                    addInstruction(Operation::PRT, peek.value().GetValueString(), "c");
+                    addInstruction(Operation::PRT, "$" + peek.value().GetValueString(), "@c");
                     peek = nextToken();
                 } else {
                     std::string value;
                     auto err = analyseExpression(value);
                     if (err.has_value())
                         return err;
-                    addInstruction(Operation::PRT, value, "i");
+                    addInstruction(Operation::PRT, value, "@i");
                 }
 
                 if (mismatchType(peek, TokenType::COMMA))
                     break;
                 else {
                     peek = nextToken();
-                    addInstruction(Operation::PRT, " ", "c");
+                    addInstruction(Operation::PRT, "$ ", "@c");
                 }
             }
         }
-        addInstruction(Operation::PRT, "", "ln");
+        addInstruction(Operation::PRT, "", "@ln");
 
 
         if (mismatchType(peek, TokenType::RIGHT_PAREN))
@@ -726,7 +726,7 @@ namespace miniplc0 {
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
 
-        addInstruction(Operation::CAL, id);
+        addInstruction(Operation::CAL, "@" + id);
 
         // function has a void return value will not be a factor
         if (useRet) {
@@ -734,7 +734,7 @@ namespace miniplc0 {
             addInstruction(Operation::ASN, "", "", returnValue);
             ret = returnValue;
         } else if (getSymbolType(id) != SymbolType::Void) {
-            addInstruction(Operation::POP, "1");
+            addInstruction(Operation::POP, "$1");
         }
 
 
@@ -1051,20 +1051,33 @@ namespace miniplc0 {
             return getTempName();
     }
 
+    std::string Analyser::getOpr(std::string str) {
+        if (str.empty() || str[0] == '$' || str[0] == '@' )
+            return str;
+        int index = getStackIndex(str);
+        if (_lastIndex.size() == 1 || index < _lastIndex[1]) {
+            // global variable
+            return "c" + std::to_string(index);
+        } else {
+            return std::to_string(index - _lastIndex[1]);
+        }
+    }
+
     void Analyser::addInstruction(Operation opr, const std::string& x) {
-        _instructions.emplace_back(opr, x);
+        _instructions.emplace_back(opr, getOpr(x));
     }
 
     void Analyser::addInstruction(Operation opr, const std::string& x, const std::string& y) {
-        _instructions.emplace_back(opr, x, y);
+        _instructions.emplace_back(opr, getOpr(x), getOpr(y));
     }
 
     void Analyser::addInstruction(Operation opr, const std::string& x, const std::string& y, const std::string& r) {
-        _instructions.emplace_back(opr, x, y, r);
+        _instructions.emplace_back(opr, getOpr(x), getOpr(y), getOpr(r));
     }
 
     SymbolType Analyser::currentFuncType() {
         return _functions[_functions.size() - 1].getReturnType();
     }
+
 
 }
