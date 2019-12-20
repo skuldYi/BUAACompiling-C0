@@ -185,8 +185,8 @@ namespace miniplc0 {
 
 //            debugOut("analyse func definition");
 
-            auto type = specifierType(peek);
-            if (!type.has_value())
+            auto funcType = specifierType(peek);
+            if (!funcType.has_value())
                 return makeCE(ErrorCode::ErrNeedTypeSpecifier);
             peek = nextToken();
 
@@ -201,7 +201,7 @@ namespace miniplc0 {
             if (isLocal(name))
                 return makeCE(ErrorCode::ErrDuplicateDeclaration);
 
-            int funId = addFunction(id, type.value());
+            int funId = addFunction(id, funcType.value());
             setSymbolTable();
             // symbol table will be reset in analyse compound statement
 
@@ -221,7 +221,7 @@ namespace miniplc0 {
                         peek = nextToken();
                     }
 
-                    type = specifierType(peek);
+                    auto type = specifierType(peek);
                     if (!type.has_value())
                         return makeCE(ErrorCode::ErrNeedTypeSpecifier);
                     if (type.value() == SymbolType::Void)
@@ -260,11 +260,12 @@ namespace miniplc0 {
                 return err;
 
 //            debugOut("2");
-            if (type.value() != SymbolType::Void && !returned) {
+            if (funcType.value() != SymbolType::Void && !returned) {
                 return makeCE(ErrorCode::ErrNeedReturnValue);
             }
 
-            return {};
+            if (funcType.value() == SymbolType::Void && !returned)
+                addInstruction(Operation::RET, "");
         }
     }
 
@@ -539,7 +540,7 @@ namespace miniplc0 {
 
     // 'return' [<expression>] ';'
     std::optional<CompilationError> Analyser::analyseJumpStatement() {
-        debugOut("analyse jump statement");
+//        debugOut("analyse jump statement");
 
         if (mismatchType(peek, TokenType::RETURN))
             return makeCE(ErrorCode::ErrSyntaxError);
