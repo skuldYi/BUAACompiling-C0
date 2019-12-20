@@ -562,25 +562,32 @@ namespace miniplc0 {
 
         if (mismatchType(peek, TokenType::RIGHT_PAREN)) {
             // <printable> {',' <printable>}
-            // <printable> ::= <expression> | <string-literal>
+            // <printable> ::= <expression> | <string-literal> | <char-literal>
             while (true) {
                 if (!mismatchType(peek, TokenType::STRING)) {
-                    addInstruction(Operation::PRT, "@" + peek.value().GetValueString());
+                    addInstruction(Operation::PRT, peek.value().GetValueString(), "s");
+                    peek = nextToken();
+                } else if (!mismatchType(peek, TokenType::UNSIGNED_CHAR)) {
+                    addInstruction(Operation::PRT, peek.value().GetValueString(), "c");
                     peek = nextToken();
                 } else {
                     std::string value;
                     auto err = analyseExpression(value);
                     if (err.has_value())
                         return err;
-                    addInstruction(Operation::PRT, value);
+                    addInstruction(Operation::PRT, value, "i");
                 }
 
                 if (mismatchType(peek, TokenType::COMMA))
                     break;
-                else
+                else {
                     peek = nextToken();
+                    addInstruction(Operation::PRT, " ", "c");
+                }
             }
         }
+        addInstruction(Operation::PRT, "", "ln");
+
 
         if (mismatchType(peek, TokenType::RIGHT_PAREN))
             return makeCE(ErrorCode::ErrIncompleteExpression);

@@ -1,5 +1,6 @@
 expr		OP		opr1	opr2	result
 a = t		ASN		t		-		a
+a = stack.top				-		-		a
 t = -a		NEG		a 		-		t
 t = a + b	ADD		a 		b		t
 t = a - b	SUB		a 		b		t
@@ -7,7 +8,7 @@ t = a * b	MUL		a 		b		t
 t = a / b	DIV		a 		b		t
 
 label a 	LAB		a
-foo(int a)	PARA	a 		int
+foo(int a)	FUNC 	name	para_size	level
 foo(a)		PUSH	a
 			CAL		foo
 return a	RET 	a
