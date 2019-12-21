@@ -938,6 +938,7 @@ namespace c0 {
 
 		_symbols.emplace_back(tk.GetValueString(), _nextStackIndex, type, isConst, isInit, funInd);
 		_nextStackIndex++;
+		addInstruction(QuadOpr::PUSH, "$0");
 	}
 
     int Analyser::_findSymbol(const std::string & str) {
