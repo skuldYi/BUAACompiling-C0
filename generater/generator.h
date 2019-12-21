@@ -70,8 +70,8 @@ namespace c0 {
 	    int getFuncId(const std::string&);
 	    int constString(const std::string&);
 
-//	    void preTreat();
-//	    void generateCode(std::vector<Instruction>&, const Quadruple&);
+	    void preTreat();
+	    void generateCode(std::vector<Instruction>&, const Quadruple&);
 //	    void getAddr(std::vector<Instruction>&, const std::string&);
 //	    void loadI(std::vector<Instruction>&, const std::string&);
 

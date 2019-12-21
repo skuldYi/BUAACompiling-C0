@@ -19,8 +19,8 @@ a <= b		LE		a 		b
 a > b		GT		a 		b 		
 a >= b		GE		a 		b 		
 无条件跳转	GOTO	LABEL1
-满足跳转		BNZ 	LABEL1
-不满足跳转	BZ 		LABEL1
+满足跳转		BNZ 	LABEL1	opr
+不满足跳转	BZ 		LABEL1	opr
 
 print(a)	PRT 	a 		i/c/s/ln
 scan(a)		SCN 	a

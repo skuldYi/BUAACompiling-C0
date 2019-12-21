@@ -32,6 +32,147 @@ namespace c0 {
         }
     }
 
+    void Generator::preTreat() {
+        for (int i = 0; i < (int)_quads.size(); i++) {
+            if (_quads[i].getOperation() == QuadOpr::BZ
+                || _quads[i].getOperation() == QuadOpr::BNZ) {
+                std::string opr;
+                switch (_quads[i - 1].getOperation()) {
+                    case QuadOpr::EQU:
+                        opr = "equ";
+                        break;
+                    case QuadOpr::NE:
+                        opr = "ne";
+                        break;
+                    case QuadOpr::LT:
+                        opr = "lt";
+                        break;
+                    case QuadOpr::LE:
+                        opr = "le";
+                        break;
+                    case QuadOpr::GT:
+                        opr = "gt";
+                        break;
+                    case QuadOpr::GE:
+                        opr = "ge";
+                        break;
+                    default:
+                        opr = "";
+                }
+                _quads[i].setY(opr);
+            }
+        }
+    }
+
+    void getAddr(std::vector<Instruction> & seq, const std::string& pos) {
+        int global = 0, offset;
+        if (pos[0] == 'c') {
+            global = 1;
+            offset = std::stoi(pos.substr(1));
+        } else
+            offset = std::stoi(pos);
+
+        //loada level_diff(2), offset(4)
+        seq.emplace_back(opCode::loadA, global, offset);
+    }
+
+    inline void loadI(std::vector<Instruction> & seq, const std::string & pos) {
+        getAddr(seq, pos);
+        seq.emplace_back(opCode::iLoad);
+    }
+
+    inline opCode calOpr(const QuadOpr & opr) {
+        switch (opr) {
+            case ADD:
+                return opCode::iAdd;
+            case SUB:
+                return opCode::iSub;
+            case MUL:
+                return opCode::iMul;
+            case DIV:
+                return opCode::iDiv;
+            default:
+                return opCode::nop;
+        }
+    }
+
+    void Generator::generateCode(std::vector<Instruction>& seq, const Quadruple& quad) {
+        switch (quad.getOperation()) {
+            // a = t    ASN t	-	a
+            case QuadOpr::ASN:
+                getAddr(seq, quad.getR());
+                loadI(seq, quad.getX());
+                seq.emplace_back(opCode::iStore);
+                break;
+            // t = -a   a	-	t
+            case QuadOpr::NEG:
+                getAddr(seq, quad.getR());
+                loadI(seq, quad.getX());
+                seq.emplace_back(opCode::iNeg);
+                seq.emplace_back(opCode::iStore);
+                break;
+            // t = a + b	ADD/SUB/MUL/DIV	a	b	t
+            case QuadOpr::ADD:
+            case QuadOpr::SUB:
+            case QuadOpr::MUL:
+            case QuadOpr::DIV:
+                getAddr(seq, quad.getR());
+                loadI(seq, quad.getX());
+                loadI(seq, quad.getY());
+                seq.emplace_back(calOpr(quad.getOperation()));
+                seq.emplace_back(opCode::iStore);
+                break;
+
+            case QuadOpr::LAB:
+                setLabel(quad.getX());
+                break;
+            case QuadOpr::FUNC:
+                // wont happen
+                break;
+
+            // PUSH	a
+            case QuadOpr::PUSH:
+                if (quad.getX()[0] == '$')
+                    seq.emplace_back(opCode::iPush, std::stoi(quad.getX().substr(1)));
+                else
+                    loadI(seq, quad.getX());
+                break;
+            //pop{a}	POP	a
+            case QuadOpr::POP:
+                seq.emplace_back(opCode::popN, std::stoi(quad.getX().substr(1)));
+                break;
+            //foo(a)		CAL	foo
+            case QuadOpr::CAL:
+                seq.emplace_back(opCode::call, getFuncId(quad.getX()));
+                break;
+            //return a	RET	a/-
+            case QuadOpr::RET:
+                if (quad.getX().empty())
+                    seq.emplace_back(opCode::ret);
+                else {
+                    loadI(seq, quad.getX());
+                    seq.emplace_back(opCode::iRet);
+                }
+                break;
+
+            case QuadOpr::EQU:
+            case QuadOpr::NE:
+            case QuadOpr::LT:
+            case QuadOpr::LE:
+            case QuadOpr::GT:
+            case QuadOpr::GE:
+                seq.emplace_back(opCode::iCmp);
+                break;
+
+            case QuadOpr::GOTO:
+            case QuadOpr::BNZ:
+            case QuadOpr::BZ:
+
+            case QuadOpr::PRT:
+            case QuadOpr::SCN:
+                break;
+        }
+    }
 
     void Generator::backfillLabel(std::vector<Instruction>& insSeq) {
         for (Instruction& i : insSeq) {

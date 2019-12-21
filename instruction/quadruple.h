@@ -51,7 +51,11 @@ namespace c0 {
 		std::string getX() const { return _x; }
 		std::string getY() const { return _y; }
 		std::string getR() const { return _r; }
-	private:
+        void setX(const std::string &x) {_x = x;}
+        void setY(const std::string &y) {_y = y;}
+
+
+    private:
 		QuadOpr _opr;
 		std::string _x, _y, _r;
 	};
@@ -63,4 +67,5 @@ namespace c0 {
 		swap(lhs._y, rhs._y);
 		swap(lhs._r, rhs._r);
 	}
+
 }
