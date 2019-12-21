@@ -1,0 +1,33 @@
+opCode	x/b	y/b
+nop
+bipush	1
+ipush	4
+pop1
+popn	4
+loadc	2
+loada	2	4
+iload
+istore
+iadd
+isub
+imul
+idiv
+ineg
+icmp
+i2c
+jmp	2
+je 	2
+jne 2
+jl 	2
+jge 2
+jg  2
+jle 2
+call	2
+ret
+iret
+iprint
+cprint
+sprint
+printl
+iscan
+cscan

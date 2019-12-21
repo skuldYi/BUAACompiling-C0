@@ -5,10 +5,7 @@
 #include <ostream>
 
 namespace c0 {
+    struct byteCode* Generate() {
 
-    std::ostream* Generator::Generate() {
-//        std::ostream *out = nullptr;
-        std::cout << "hello world" << std::endl;
-//        out << "hello world" << std::endl;
     }
 }
