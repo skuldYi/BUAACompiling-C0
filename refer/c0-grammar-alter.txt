@@ -137,7 +137,7 @@
 <printable-list>  ::= 
     <printable> {',' <printable>}
 <printable> ::= 
-    <expression> | <string-literal>
+    <expression> | <string-literal> | <char-literal>
 
 <assignment-expression> ::= 
     <identifier> '=' <expression>
