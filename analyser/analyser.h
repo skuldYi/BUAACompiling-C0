@@ -48,7 +48,7 @@ namespace c0 {
         std::optional<CompilationError> analyseAssignmentStatement();
         // pass false if function's return value isn't used
         // (function-call as a statement instead of as a factor)
-        std::optional<CompilationError> analyseFunctionCall(bool, std::string&);
+        std::optional<CompilationError> analyseFunctionCall(std::string&);
 
         std::optional<CompilationError> analyseExpression(std::string&);
 		std::optional<CompilationError> analyseTerm(std::string&);
@@ -71,12 +71,14 @@ namespace c0 {
         std::vector<int> _lastSymbolTable;
         std::vector<int> _lastIndex;
 
-        void _addVar(const Token&, SymbolType type, bool isConst, bool isInit, int16_t funInd);
+        void _addSymbol(const std::string&, SymbolType type, bool isConst, bool isInit, int16_t funInd,
+                        bool isVar, bool needSpace);
 		int _findSymbol(const std::string&);    // return index in symbol table
 
 		void addVariable(const Token&, SymbolType);
         void addConstant(const Token&, SymbolType);
         void addUninitializedVariable(const Token&, SymbolType);
+        void addPara(const Token&, SymbolType, bool isConst);   // dont push 0
         SymbolType getSymbolType(const std::string&);
 
         int addFunction(const Token&, SymbolType);     // return function index

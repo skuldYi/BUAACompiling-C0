@@ -234,10 +234,7 @@ namespace c0 {
                     peek = nextToken();
 
                     addFuncPara(funId, type.value());
-                    if (isConst)
-                        addConstant(id, type.value());
-                    else
-                        addVariable(id, type.value());
+                    addPara(id, type.value(), isConst);
 
                     if (mismatchType(peek, TokenType::COMMA))
                         break;
@@ -250,6 +247,7 @@ namespace c0 {
                 return makeCE(ErrorCode::ErrIncompleteExpression);
             }
             peek = nextToken();
+
 
             addInstruction(QuadOpr::FUNC, "@" + name, "$" + std::to_string(getFuncParaSize(name)), "$1");
 
@@ -328,7 +326,7 @@ namespace c0 {
                 else if (next.value().GetType() == TokenType::ASSIGN_SIGN)
                     err = analyseAssignmentStatement();
                 else if (next.value().GetType() == TokenType::LEFT_PAREN)
-                    err = analyseFunctionCall(false, str);
+                    err = analyseFunctionCall(str);
                 else
                     err = makeCE(ErrorCode::ErrSyntaxError);
 
@@ -688,13 +686,22 @@ namespace c0 {
 
     // <identifier> '(' [<expression-list>] ')'
     // <expression-list> ::= <expression>{','<expression>}
-    std::optional<CompilationError> Analyser::analyseFunctionCall(bool useRet, std::string& ret) {
+    std::optional<CompilationError> Analyser::analyseFunctionCall(std::string& ret) {
 //        debugOut("analyse func call");
 
         if (mismatchType(peek, TokenType::IDENTIFIER))
             return makeCE(ErrorCode::ErrSyntaxError);
         std::string id = peek.value().GetValueString();
         peek = nextToken();
+
+        auto type = getSymbolType(id);
+        if (type != SymbolType::Void) {
+            std::string returnValue = "#t" + std::to_string(_nextStackIndex);
+
+            _addSymbol(returnValue, type, false, true, -1, true, false);
+
+            ret = returnValue;
+        }
 
         if (mismatchType(peek, TokenType::LEFT_PAREN))
             return makeCE(ErrorCode::ErrIncompleteExpression);
@@ -727,16 +734,6 @@ namespace c0 {
         peek = nextToken();
 
         addInstruction(QuadOpr::CAL, "@" + id);
-
-        // function has a void return value will not be a factor
-        if (useRet) {
-            std::string returnValue = getTempName();
-            addInstruction(QuadOpr::ASN, "", "", returnValue);
-            ret = returnValue;
-        } else if (getSymbolType(id) != SymbolType::Void) {
-            addInstruction(QuadOpr::POP, "$1");
-        }
-
 
         return std::optional<CompilationError>();
     }
@@ -865,7 +862,7 @@ namespace c0 {
                         return makeCE(ErrorCode::ErrVoidVariable);
 
                     unreadToken();
-                    err = analyseFunctionCall(true, ret1);
+                    err = analyseFunctionCall(ret1);
                 } else {
                     // variable
                     peek = next;
@@ -932,13 +929,13 @@ namespace c0 {
 		_offset--;
 	}
 
-	void Analyser::_addVar(const Token& tk, SymbolType type, bool isConst, bool isInit, int16_t funInd) {
-		if (tk.GetType() != TokenType::IDENTIFIER)
-			DieAndPrint("only identifier can be added to the table.");
-
-		_symbols.emplace_back(tk.GetValueString(), _nextStackIndex, type, isConst, isInit, funInd);
-		_nextStackIndex++;
-		addInstruction(QuadOpr::PUSH, "$0");
+	void Analyser::_addSymbol(const std::string& s, SymbolType type, bool isConst, bool isInit, int16_t funInd,
+                              bool isVar, bool needSpace) {
+		_symbols.emplace_back(s, _nextStackIndex, type, isConst, isInit, funInd);
+        if (isVar)
+		    _nextStackIndex++;
+        if (needSpace)
+            addInstruction(QuadOpr::PUSH, "$0");
 	}
 
     int Analyser::_findSymbol(const std::string & str) {
@@ -952,20 +949,34 @@ namespace c0 {
     }
 
 	void Analyser::addVariable(const Token& tk, SymbolType type) {
-        _addVar(tk, type, false, true, -1);
+        if (tk.GetType() != TokenType::IDENTIFIER)
+            DieAndPrint("only identifier can be added to the table.");
+        _addSymbol(tk.GetValueString(), type, false, true, -1, true, true);
 	}
 
 	void Analyser::addConstant(const Token& tk, SymbolType type) {
-        _addVar(tk, type, true, true, -1);
+        if (tk.GetType() != TokenType::IDENTIFIER)
+            DieAndPrint("only identifier can be added to the table.");
+        _addSymbol(tk.GetValueString(), type, true, true, -1, true, true);
     }
 
 	void Analyser::addUninitializedVariable(const Token& tk, SymbolType type) {
-        _addVar(tk, type, false, false, -1);
+        if (tk.GetType() != TokenType::IDENTIFIER)
+            DieAndPrint("only identifier can be added to the table.");
+        _addSymbol(tk.GetValueString(), type, false, false, -1, true, true);
+    }
+
+	void Analyser::addPara(const Token& tk, SymbolType type, bool isConst) {
+        if (tk.GetType() != TokenType::IDENTIFIER)
+            DieAndPrint("only identifier can be added to the table.");
+        _addSymbol(tk.GetValueString(), type, isConst, true, -1, true, false);
     }
 
     int Analyser::addFunction(const Token & tk, SymbolType type) {
 	    int16_t funInd = _functions.size();
-	    _addVar(tk, type, true, true, funInd);
+        if (tk.GetType() != TokenType::IDENTIFIER)
+            DieAndPrint("only identifier can be added to the table.");
+        _addSymbol(tk.GetValueString(), type, true, true, funInd, false, false);
 	    _functions.emplace_back(type);
 
         return funInd;
