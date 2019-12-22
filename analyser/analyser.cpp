@@ -1067,7 +1067,7 @@ namespace c0 {
         if (str.empty() || str[0] == '$' || str[0] == '@' )
             return str;
         int index = getStackIndex(str);
-        if (_lastIndex.size() == 1 || index < _lastIndex[1]) {
+        if (_lastIndex.size() > 1 && index < _lastIndex[1]) {
             // global variable
             return "c" + std::to_string(index);
         } else {
