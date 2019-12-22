@@ -8,6 +8,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <climits>
+#include <string>
 
 std::vector<c0::Token> _tokenize(std::istream& input) {
 	c0::Tokenizer tkz(input);
@@ -43,14 +45,42 @@ void Analyse(std::istream& input, std::ostream& output){
 void Compile(std::istream& input, std::ostream& output){
 	auto tks = _tokenize(input);
 	c0::Analyser analyser(tks);
-	auto p = analyser.Analyse();
-	if (p.second.has_value()) {
-		fmt::print(stderr, "Syntactic analysis error: {}\n", p.second.value());
+	auto ana = analyser.Analyse();
+	if (ana.second.has_value()) {
+		fmt::print(stderr, "Syntactic analysis error: {}\n", ana.second.value());
 		exit(2);
 	}
-	auto quad = p.first;
+	auto quad = ana.first;
     c0::Generator generator(quad);
-    generator.Generate();
+    auto code = generator.Generate();
+
+    int i;
+    output << ".constants:\n";
+    i = 0;
+    for (const auto& pair : code.constants) {
+        output << i++ << "\t" << pair.first << "\t\"" << pair.second << "\"\n";
+    }
+
+    output << ".start:\n";
+    i = 0;
+    for (const auto& it : code.start) {
+        output << i++ << "\t" << fmt::format("{}\n", it);
+    }
+
+    output << ".functions:\n";
+    i = 0;
+    for (const auto& it : code.functions) {
+        output << i++ << "\t" << fmt::format("{}\n", it);
+    }
+
+    for (i = 0; i < (int)code.instructions.size(); i++) {
+        output << ".F" << i << ":\n";
+        int j = 0;
+        for (const auto &it : code.instructions[i]) {
+            output << j++ << "\t" << fmt::format("{}\n", it);
+        }
+    }
+
     return;
 }
 

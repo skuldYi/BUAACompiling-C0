@@ -357,30 +357,161 @@ namespace fmt {
 		auto format(const c0::Quadruple &p, FormatContext &ctx) {
 			std::string name;
             return format_to(ctx.out(), "{}\t{}\t{}\t{}", p.getOperation(), p.getX(), p.getY(), p.getR());
+		}
+	};
+}
 
-//			switch (p.getOperation())
-//			{
-//			case c0::LAB:
-//			case c0::PUSH:
-//			case c0::CAL:
-//			case c0::RET:
-//			case c0::GOTO:
-//			case c0::BNZ:
-//			case c0::BZ:
-//				return format_to(ctx.out(), "{} {}", p.getOperation(), p.getX())
-//
-//			case c0::ADD:
-//			case c0::SUB:
-//			case c0::MUL:
-//			case c0::DIV:
-//			case c0::WRT:
-//				return format_to(ctx.out(), "{}", p.GetOperation());
-//			case c0::LIT:
-//			case c0::LOD:
-//			case c0::STO:
-//				return format_to(ctx.out(), "{} {}", p.GetOperation(), p.GetX());
-//			}
-//			return format_to(ctx.out(), "ILL");
+namespace fmt {
+	template<>
+	struct formatter<c0::opCode> {
+		template <typename ParseContext>
+		constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+		template <typename FormatContext>
+		auto format(const c0::opCode &p, FormatContext &ctx) {
+			std::string name;
+			switch (p) {
+                case c0::nop:
+                    name = "nop";
+                    break;
+                case c0::biPush:
+                    name = "bipush";
+                    break;
+                case c0::iPush:
+                    name = "ipush";
+                    break;
+                case c0::pop1:
+                    name = "pop1";
+                    break;
+                case c0::popN:
+                    name = "popn";
+                    break;
+                case c0::loadC:
+                    name = "loadc";
+                    break;
+                case c0::loadA:
+                    name = "loada";
+                    break;
+                case c0::iLoad:
+                    name = "iload";
+                    break;
+                case c0::iStore:
+                    name = "istore";
+                    break;
+                case c0::iAdd:
+                    name = "iadd";
+                    break;
+                case c0::iSub:
+                    name = "isub";
+                    break;
+                case c0::iMul:
+                    name = "imul";
+                    break;
+                case c0::iDiv:
+                    name = "idiv";
+                    break;
+                case c0::iNeg:
+                    name = "ineg";
+                    break;
+                case c0::iCmp:
+                    name = "icmp";
+                    break;
+                case c0::i2c:
+                    name = "i2c";
+                    break;
+                case c0::jmp:
+                    name = "jmp";
+                    break;
+                case c0::je:
+                    name = "je";
+                    break;
+                case c0::jne:
+                    name = "jne";
+                    break;
+                case c0::jl:
+                    name = "jl";
+                    break;
+                case c0::jge:
+                    name = "jge";
+                    break;
+                case c0::jg:
+                    name = "jg";
+                    break;
+                case c0::jle:
+                    name = "jle";
+                    break;
+                case c0::call:
+                    name = "call";
+                    break;
+                case c0::ret:
+                    name = "ret";
+                    break;
+                case c0::iRet:
+                    name = "iret";
+                    break;
+                case c0::iPrint:
+                    name = "iprint";
+                    break;
+                case c0::cPrint:
+                    name = "cprint";
+                    break;
+                case c0::sPrint:
+                    name = "sprint";
+                    break;
+                case c0::printL:
+                    name = "printl";
+                    break;
+                case c0::iScan:
+                    name = "iscan";
+                    break;
+                case c0::cScan:
+                    name = "cscan";
+                    break;
+			}
+			return format_to(ctx.out(), name);
+		}
+	};
+	template<>
+	struct formatter<c0::Instruction> {
+		template <typename ParseContext>
+		constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+		template <typename FormatContext>
+		auto format(const c0::Instruction &ins, FormatContext &ctx) {
+			switch (ins.getOpr()) {
+                case c0::loadA:
+                    return format_to(ctx.out(), "{} {}, {}", ins.getOpr(), ins.getX(), ins.getY());
+
+                case c0::biPush:
+                case c0::iPush:
+                case c0::popN:
+                case c0::loadC:
+                case c0::jmp:
+                case c0::je:
+                case c0::jne:
+                case c0::jl:
+                case c0::jge:
+                case c0::jg:
+                case c0::jle:
+                case c0::call:
+                    return format_to(ctx.out(), "{} {}", ins.getOpr(), ins.getX());
+
+                default:
+                    return format_to(ctx.out(), "{}", ins.getOpr());
+            }
+		}
+	};
+}
+
+namespace fmt {
+	template<>
+	struct formatter<c0::funcInfo> {
+		template <typename ParseContext>
+		constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+		template <typename FormatContext>
+		auto format(const c0::funcInfo &f, FormatContext &ctx) {
+            return format_to(ctx.out(), "{}\t{}\t{}", f.name_index, f.params_size, f.level);
 		}
 	};
 }

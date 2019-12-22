@@ -1,7 +1,5 @@
 #include "generator.h"
 
-#include <climits>
-
 namespace c0 {
     byteCode Generator::Generate() {
         generate();
@@ -188,7 +186,7 @@ namespace c0 {
                 break;
             //foo(a)		CAL	foo
             case QuadOpr::CAL:
-                seq.emplace_back(opCode::call, getFuncId(quad.getX()));
+                seq.emplace_back(opCode::call, getFuncId(quad.getX().substr(1)));
                 break;
             //return a	RET	a/-
             case QuadOpr::RET:
@@ -231,6 +229,7 @@ namespace c0 {
                     seq.emplace_back(opCode::sPrint);
                 } else if (quad.getY() == "@ln")
                     seq.emplace_back(opCode::printL);
+                break;
             //scan(a)		SCN 	a
             case QuadOpr::SCN:
                 getAddr(seq, quad.getX());
@@ -281,6 +280,7 @@ namespace c0 {
             if (_functions[i].name_index == name)
                 return i;
         }
+        return -1;
     }
 
     void Generator::setLabel(const std::string & label) {
