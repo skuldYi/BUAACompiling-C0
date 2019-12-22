@@ -662,6 +662,8 @@ namespace c0 {
         if (mismatchType(peek, TokenType::IDENTIFIER))
             return makeCE(ErrorCode::ErrSyntaxError);
         std::string id = peek.value().GetValueString();
+        if (isFunction(id))
+            return makeCE(ErrorCode::ErrNotDeclared);
         peek = nextToken();
 
         if (mismatchType(peek, TokenType::ASSIGN_SIGN))
@@ -692,6 +694,8 @@ namespace c0 {
         if (mismatchType(peek, TokenType::IDENTIFIER))
             return makeCE(ErrorCode::ErrSyntaxError);
         std::string id = peek.value().GetValueString();
+        if (!isFunction(id))
+            return makeCE(ErrorCode::ErrFunctionNotDefined);
         peek = nextToken();
 
         auto type = getSymbolType(id);
@@ -855,9 +859,6 @@ namespace c0 {
 
                 if (!mismatchType(next, TokenType::LEFT_PAREN)) {
                     // function-call
-                    if (!isFunction(id))
-                        return makeCE(ErrorCode::ErrFunctionNotDefined);
-
                     if (getSymbolType(id) == SymbolType::Void)
                         return makeCE(ErrorCode::ErrVoidVariable);
 
@@ -867,10 +868,8 @@ namespace c0 {
                     // variable
                     peek = next;
 
-                    if (!isDeclared(id))
+                    if (!isDeclared(id) || isFunction(id))
                         err = makeCE(ErrorCode::ErrNotDeclared);
-                    else if (isFunction(id))
-                        err = makeCE(ErrorCode::ErrInvalidFunctionCall);
                     else if (isUninitializedVariable(id))
                         err = makeCE(ErrorCode::ErrNotInitialized);
                     else {
