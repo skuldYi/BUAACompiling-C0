@@ -76,9 +76,13 @@ namespace c0 {
         seq.emplace_back(opCode::loadA, global, offset);
     }
 
-    inline void loadI(std::vector<Instruction> & seq, const std::string & pos) {
-        getAddr(seq, pos);
-        seq.emplace_back(opCode::iLoad);
+    inline void loadI(std::vector<Instruction> & seq, const std::string & opr) {
+        if (opr[0] == '$')
+            seq.emplace_back(opCode::iPush, std::stoi(opr.substr(1)));
+        else {
+            getAddr(seq, opr);
+            seq.emplace_back(opCode::iLoad);
+        }
     }
 
     inline opCode calOpr(const QuadOpr & opr) {
@@ -94,6 +98,47 @@ namespace c0 {
             default:
                 return opCode::nop;
         }
+    }
+
+    inline opCode relOpr(const QuadOpr & opr, const std::string& rel) {
+        opCode op = opCode::nop;
+        switch (opr) {
+            case GOTO:
+                op = opCode::jmp;
+                break;
+            case BNZ:   // 满足条件
+                if (rel == "equ")
+                    op = opCode::je;
+                else if (rel == "ne")
+                    op = opCode::jne;
+                else if (rel == "lt")
+                    op = opCode::jl;
+                else if (rel == "le")
+                    op = opCode::jle;
+                else if (rel == "gt")
+                    op = opCode::jg;
+                else if (rel == "ge")
+                    op = opCode::jge;
+                break;
+            case BZ:    // 不满足条件
+                if (rel == "equ")
+                    op = opCode::jne;
+                else if (rel == "ne")
+                    op = opCode::je;
+                else if (rel == "lt")
+                    op = opCode::jge;
+                else if (rel == "le")
+                    op = opCode::jg;
+                else if (rel == "gt")
+                    op = opCode::jle;
+                else if (rel == "ge")
+                    op = opCode::jl;
+                break;
+
+            default:
+                op = opCode::nop;
+        }
+        return op;
     }
 
     void Generator::generateCode(std::vector<Instruction>& seq, const Quadruple& quad) {
@@ -164,12 +209,33 @@ namespace c0 {
                 seq.emplace_back(opCode::iCmp);
                 break;
 
+            // 无条件跳转	GOTO	LABEL1
+            // 满足跳转		BNZ 	LABEL1	opr
+            // 不满足跳转	BZ 		LABEL1	opr
             case QuadOpr::GOTO:
             case QuadOpr::BNZ:
             case QuadOpr::BZ:
+                seq.emplace_back(relOpr(quad.getOperation(), quad.getY()), std::stoi(quad.getX().substr(1)));
+                break;
 
+            //print(a)	PRT 	a 		i/c/s/ln
             case QuadOpr::PRT:
+                if (quad.getY() == "@i") {
+                    loadI(seq, quad.getX());
+                    seq.emplace_back(opCode::iPrint);
+                } else if (quad.getY() == "@c") {
+                    loadI(seq, quad.getX());
+                    seq.emplace_back(opCode::cPrint);
+                } else if (quad.getY() == "@s") {
+                    seq.emplace_back(opCode::loadC, constString(quad.getX().substr(1)));
+                    seq.emplace_back(opCode::sPrint);
+                } else if (quad.getY() == "@ln")
+                    seq.emplace_back(opCode::printL);
+            //scan(a)		SCN 	a
             case QuadOpr::SCN:
+                getAddr(seq, quad.getX());
+                seq.emplace_back(opCode::iScan);
+                seq.emplace_back(opCode::iStore);
                 break;
         }
     }
