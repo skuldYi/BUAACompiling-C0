@@ -167,7 +167,7 @@ namespace c0 {
                 break;
 
             case QuadOpr::LAB:
-                setLabel(quad.getX());
+                setLabel(quad.getX(), seq.size());
                 break;
             case QuadOpr::FUNC:
                 // wont happen
@@ -204,6 +204,8 @@ namespace c0 {
             case QuadOpr::LE:
             case QuadOpr::GT:
             case QuadOpr::GE:
+                loadI(seq, quad.getX());
+                loadI(seq, quad.getY());
                 seq.emplace_back(opCode::iCmp);
                 break;
 
@@ -283,8 +285,8 @@ namespace c0 {
         return -1;
     }
 
-    void Generator::setLabel(const std::string & label) {
-        _labels[std::stoi(label.substr(1))] = _instructions.size();
+    void Generator::setLabel(const std::string & label, int pos) {
+        _labels[std::stoi(label.substr(1))] = pos;
    }
 
 }

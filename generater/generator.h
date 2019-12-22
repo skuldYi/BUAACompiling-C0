@@ -75,7 +75,7 @@ namespace c0 {
 //	    void getAddr(std::vector<Instruction>&, const std::string&);
 //	    void loadI(std::vector<Instruction>&, const std::string&);
 
-	    void setLabel(const std::string&);
+	    void setLabel(const std::string&, int);
 	    void backfillLabel(std::vector<Instruction>&);
 	};
 }
