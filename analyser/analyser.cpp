@@ -469,7 +469,9 @@ namespace c0 {
 
         addInstruction(QuadOpr::BZ, labelElse);
         // if-statements
+        setSymbolTable();
         err = analyseStatement(returned);
+        resetSymbolTable();
         if (err.has_value())
             return err;
 
@@ -479,7 +481,9 @@ namespace c0 {
             addInstruction(QuadOpr::GOTO, labelEnd);
             addInstruction(QuadOpr::LAB, labelElse);
             peek = nextToken();
+            setSymbolTable();
             err = analyseStatement(elseReturned);
+            resetSymbolTable();
             if (err.has_value())
                 return err;
             addInstruction(QuadOpr::LAB, labelEnd);
@@ -526,7 +530,9 @@ namespace c0 {
         // while-statement
         // not used, for while-statement may not be executed
         bool returned;
+        setSymbolTable();
         err = analyseStatement(returned);
+        resetSymbolTable();
         if (err.has_value())
             return err;
 
@@ -589,7 +595,8 @@ namespace c0 {
                     addInstruction(QuadOpr::PRT, "@" + peek.value().GetValueString(), "@s");
                     peek = nextToken();
                 } else if (!mismatchType(peek, TokenType::UNSIGNED_CHAR)) {
-                    addInstruction(QuadOpr::PRT, "$" + peek.value().GetValueString(), "@c");
+                    char c = std::any_cast<char>(peek.value().GetValue());
+                    addInstruction(QuadOpr::PRT, "$" + std::to_string(c), "@c");
                     peek = nextToken();
                 } else {
                     std::string value;
@@ -603,7 +610,7 @@ namespace c0 {
                     break;
                 else {
                     peek = nextToken();
-                    addInstruction(QuadOpr::PRT, "$ ", "@c");
+                    addInstruction(QuadOpr::PRT, "$" + std::to_string(' '), "@c");
                 }
             }
         }
@@ -623,7 +630,7 @@ namespace c0 {
 
     // 'scan' '(' <identifier> ')' ';'
     std::optional<CompilationError> Analyser::analyseScanStatement() {
-        debugOut("analyse scan statement");
+//        debugOut("analyse scan statement");
 
         if (mismatchType(peek, TokenType::SCAN))
             return makeCE(ErrorCode::ErrSyntaxError);
@@ -640,7 +647,7 @@ namespace c0 {
 
         if (!isDeclared(id))
             return makeCE(ErrorCode::ErrNotDeclared);
-        if (isConstant(id))
+        if (isConstant(id) || isFunction(id))
             return makeCE(ErrorCode::ErrAssignToConstant);
 
         if (mismatchType(peek, TokenType::RIGHT_PAREN))
@@ -652,6 +659,7 @@ namespace c0 {
         peek = nextToken();
 
         addInstruction(QuadOpr::SCN, id);
+        initVariable(id);
         return std::optional<CompilationError>();
     }
 
@@ -698,20 +706,11 @@ namespace c0 {
             return makeCE(ErrorCode::ErrFunctionNotDefined);
         peek = nextToken();
 
-        auto type = getSymbolType(id);
-        if (type != SymbolType::Void) {
-            std::string returnValue = "#t" + std::to_string(_nextStackIndex);
-
-            _addSymbol(returnValue, type, false, true, -1, true, false);
-
-            ret = returnValue;
-        }
-
         if (mismatchType(peek, TokenType::LEFT_PAREN))
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
 
-        int paraNum = 0;
+        std::vector<std::string> paras;
         if (mismatchType(peek, TokenType::RIGHT_PAREN)) {
             // <expression>{','<expression>}
             while (true) {
@@ -719,8 +718,7 @@ namespace c0 {
                 auto err = analyseExpression(para);
                 if (err.has_value())
                     return err;
-                paraNum++;
-                addInstruction(QuadOpr::PUSH, para);
+                paras.push_back(para);
 
                 if (mismatchType(peek, TokenType::COMMA))
                     break;
@@ -730,14 +728,24 @@ namespace c0 {
         }
 
         // all vars are 1 slot long, so paraNum == paraSize
-        if (paraNum != getFuncParaSize(id))
+        if ((int)paras.size() != getFuncParaSize(id))
             return makeCE(ErrorCode::ErrInvalidFunctionCall);
 
         if (mismatchType(peek, TokenType::RIGHT_PAREN))
             return makeCE(ErrorCode::ErrIncompleteExpression);
         peek = nextToken();
 
+        for (auto p : paras)
+            addInstruction(QuadOpr::PUSH, p);
+
         addInstruction(QuadOpr::CAL, "@" + id);
+
+        auto type = getSymbolType(id);
+        if (type != SymbolType::Void) {
+            std::string returnValue = "#t" + std::to_string(_nextStackIndex);
+            _addSymbol(returnValue, type, false, true, -1, true, false);
+            ret = returnValue;
+        }
 
         return std::optional<CompilationError>();
     }
@@ -995,6 +1003,8 @@ namespace c0 {
         _lastSymbolTable.pop_back();
         _symbols.erase(_symbols.begin() + size, _symbols.end());
 
+        int diff = _nextStackIndex - _lastIndex.back();
+        addInstruction(QuadOpr::POP, "$" + std::to_string(diff));
         _nextStackIndex = _lastIndex.back();
         _lastIndex.pop_back();
     }
@@ -1063,6 +1073,7 @@ namespace c0 {
     }
 
     std::string Analyser::getOpr(std::string str) {
+//        return str;
         if (str.empty() || str[0] == '$' || str[0] == '@' )
             return str;
         int index = getStackIndex(str);
