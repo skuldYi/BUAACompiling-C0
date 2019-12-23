@@ -18,15 +18,17 @@ set(lib_src
 	analyser/analyser.cpp
 	analyser/symbol.h
 	analyser/func.h
-		generater/generator.h
-		generater/generator.cpp
+	generater/generator.h
+	generater/generator.cpp
 	instruction/quadruple.h
+    binary/binary.h 
+	binary/binary.cpp
 )
 
 set(main_src
 	main.cpp
 	fmts.hpp
-)
+	)
 
 add_library(${PROJECT_LIB} ${lib_src})
 
@@ -65,9 +67,9 @@ enable_testing()
 
 set(test_src
 	tests/test_main.cpp
-	tests/test_tokenizer.cpp
+        tests/test_tokenizer.cpp.old
 	tests/simple_vm.hpp
-	tests/test_analyser.cpp
+		tests/test_analyser.cpp.old
 )
 
 add_executable(c0_test ${test_src})

@@ -10,6 +10,7 @@ label a 	LAB		a
 foo(int a)	FUNC 	name	para_size	level
 foo(a)		PUSH	a
 			CAL		foo
+pop{a}		POP 	a
 return a	RET 	a/-
 
 a == b		EQU		a 		b 		
@@ -24,7 +25,6 @@ a >= b		GE		a 		b
 
 print(a)	PRT 	a 		i/c/s/ln
 scan(a)		SCN 	a
-pop{a}		POP 	a
 
 #TempVariable
 $ImmediateNumber

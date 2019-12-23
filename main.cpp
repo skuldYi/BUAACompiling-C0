@@ -4,6 +4,7 @@
 #include "tokenizer/tokenizer.h"
 #include "analyser/analyser.h"
 #include "generater/generator.h"
+#include "binary/binary.h"
 #include "fmts.hpp"
 
 #include <iostream>
@@ -39,7 +40,6 @@ void Analyse(std::istream& input, std::ostream& output){
 	auto v = p.first;
 	for (auto& it : v)
 		output << fmt::format("{}\n", it);
-	return;
 }
 
 void Compile(std::istream& input, std::ostream& output){
@@ -80,8 +80,22 @@ void Compile(std::istream& input, std::ostream& output){
             output << j++ << "\t" << fmt::format("{}\n", it);
         }
     }
+}
 
-    return;
+void BinaryCode(std::istream& input, std::ofstream& output){
+	auto tks = _tokenize(input);
+	c0::Analyser analyser(tks);
+	auto ana = analyser.Analyse();
+	if (ana.second.has_value()) {
+		fmt::print(stderr, "Syntactic analysis error: {}\n", ana.second.value());
+		exit(2);
+	}
+	auto quad = ana.first;
+    c0::Generator generator(quad);
+    auto code = generator.Generate();
+
+    c0::Binary binary(code.constants, code.start, code.functions, code.instructions);
+    binary.output_binary(output);
 }
 
 int main(int argc, char** argv) {
@@ -135,8 +149,12 @@ int main(int argc, char** argv) {
 	else
 		input = &std::cin;
 	if (output_file != "-") {
-		outf.open(output_file, std::ios::out | std::ios::trunc);
-		if (!outf) {
+        if (program["-c"] == true)
+            outf.open(output_file, std::ios::binary | std::ios::out | std::ios::trunc);
+        else
+            outf.open(output_file, std::ios::out | std::ios::trunc);
+
+        if (!outf) {
 			fmt::print(stderr, "Fail to open {} for writing.\n", output_file);
 			exit(2);
 		}
@@ -158,7 +176,7 @@ int main(int argc, char** argv) {
 		Compile(*input, *output);
 	}
 	else if (program["-c"] == true) {
-		Analyse(*input, *output);
+        BinaryCode(*input, outf);
 	}
 	else {
 		fmt::print(stderr, "You must choose tokenization or syntactic analysis.");
