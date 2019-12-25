@@ -8,8 +8,6 @@
 #include "fmts.hpp"
 
 #include <iostream>
-#include <fstream>
-#include <climits>
 #include <string>
 
 std::vector<c0::Token> _tokenize(std::istream& input) {
@@ -102,10 +100,10 @@ int main(int argc, char** argv) {
 	argparse::ArgumentParser program("c0");
 	program.add_argument("input")
 		.help("speicify the file to be compiled.");
-//	program.add_argument("-t")
-//		.default_value(false)
-//		.implicit_value(true)
-//		.help("perform tokenization for the input file.");
+	program.add_argument("-t")
+		.default_value(false)
+		.implicit_value(true)
+		.help("perform tokenization for the input file.");
 	program.add_argument("-l")
 		.default_value(false)
 		.implicit_value(true)
@@ -138,34 +136,37 @@ int main(int argc, char** argv) {
 	std::ostream* output;
 	std::ifstream inf;
 	std::ofstream outf;
-	if (input_file != "-") {
-		inf.open(input_file, std::ios::in);
-		if (!inf) {
-			fmt::print(stderr, "Fail to open {} for reading.\n", input_file);
-			exit(2);
-		}
-		input = &inf;
-	}
-	else
-		input = &std::cin;
-	if (output_file != "-") {
-        if (program["-c"] == true)
-            outf.open(output_file, std::ios::binary | std::ios::out | std::ios::trunc);
-        else
-            outf.open(output_file, std::ios::out | std::ios::trunc);
+	if (input_file == "-") {
+        fmt::print(stderr, "Input file is required.\n");
+        exit(2);
+    }
 
-        if (!outf) {
-			fmt::print(stderr, "Fail to open {} for writing.\n", output_file);
-			exit(2);
-		}
-		output = &outf;
-	}
+    inf.open(input_file, std::ios::in);
+    if (!inf) {
+        fmt::print(stderr, "Fail to open {} for reading.\n", input_file);
+        exit(2);
+    }
+    input = &inf;
+
+	if (output_file == "-")
+	    output_file = "out";
+
+	if (program["-c"] == true)
+        outf.open(output_file, std::ios::binary | std::ios::out | std::ios::trunc);
 	else
-		output = &std::cout;
-//	if (program["-t"] == true && program["-l"] == true) {
-//		fmt::print(stderr, "You can only perform tokenization or syntactic analysis at one time.");
-//		exit(2);
-//	}
+        outf.open(output_file, std::ios::out | std::ios::trunc);
+
+    if (!outf) {
+        fmt::print(stderr, "Fail to open {} for writing.\n", output_file);
+        exit(2);
+    }
+    output = &outf;
+
+	if (program["-s"] == true && program["-c"] == true) {
+		fmt::print(stderr, "You can only generate byte code or binary file at one time.");
+		exit(2);
+	}
+	
 //	if (program["-t"] == true) {
 //		Tokenize(*input, *output);
 //	}
@@ -179,7 +180,7 @@ int main(int argc, char** argv) {
         BinaryCode(*input, outf);
 	}
 	else {
-		fmt::print(stderr, "You must choose tokenization or syntactic analysis.");
+		fmt::print(stderr, "You must choose  byte code or binary file to generate.");
 		exit(2);
 	}
 	return 0;
