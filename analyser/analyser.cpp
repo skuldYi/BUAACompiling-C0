@@ -14,15 +14,15 @@ namespace c0 {
             return {};
         SymbolType type;
         switch (tk.value().GetType()) {
-            case TokenType::CHAR:
-                type = SymbolType::Char;
-                break;
+//            case TokenType::CHAR:
+//                type = SymbolType::Char;
+//                break;
             case TokenType::INT:
                 type = SymbolType::Int;
                 break;
-            case TokenType::DOUBLE:
-                type = SymbolType::Double;
-                break;
+//            case TokenType::DOUBLE:
+//                type = SymbolType::Double;
+//                break;
             case TokenType::VOID:
                 type = SymbolType::Void;
                 break;
@@ -251,13 +251,11 @@ namespace c0 {
 
             addInstruction(QuadOpr::FUNC, "@" + name, "$" + std::to_string(getFuncParaSize(name)), "$1");
 
-//            debugOut("1");
             bool returned;
             auto err = analyseCompoundStatement(true, returned);
             if (err.has_value())
                 return err;
 
-//            debugOut("2");
             if (funcType.value() != SymbolType::Void && !returned) {
                 return makeCE(ErrorCode::ErrNeedReturnValue);
             }
@@ -279,7 +277,6 @@ namespace c0 {
     //    |';'
     std::optional<CompilationError> Analyser::analyseStatement(bool& returned){
         returned = false;
-//        debugOut("5");
         if (!isStatementFirst(peek))
             return makeCE(ErrorCode::ErrNeedStatement);
 
@@ -350,7 +347,6 @@ namespace c0 {
     std::optional<CompilationError> Analyser::analyseCompoundStatement(bool funcBody, bool& returned) {
 //        debugOut("analyse compound statement");
         returned = false;
-//        debugOut("3");
 
         if (!funcBody)
             setSymbolTable();
@@ -365,7 +361,6 @@ namespace c0 {
 
         // statement-seq
         while (isStatementFirst(peek)) {
-//            debugOut("4");
             bool stateReturned;
             err = analyseStatement(stateReturned);
             if (err.has_value())
@@ -845,7 +840,7 @@ namespace c0 {
 
 		std::optional<CompilationError> err;
 		std::string id;
-		long l;
+		long long l;
 		int i;
 		auto next = peek;
 
