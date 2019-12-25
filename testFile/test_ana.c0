@@ -1,0 +1,173 @@
+// testVariableA
+// void main () {
+// 	int a1, a2 = 1;
+// 	const int b1 = 0x12;
+// 	int testVariableA;
+// 	a1 = 0XDeadBeaf;
+// 	print(a1);
+// }
+
+// testVariableB
+// void main(int b) {
+// 	void a1 = 1;
+// 	const void b2 = 1;
+// 	const b1;
+// 	const int a2;
+// 	const int a2 = 1;
+// 	a2 = 3;
+
+// 	int a2 = 2147483648;
+// 	int a;
+// 	int a;
+// 	int b;
+// }
+
+// testExpressionA
+// int func;
+// void func(){}
+// int func2(){return 1;}
+// void main() {
+// 	int a = 3, b = 5;
+// 	print(12345, +12345, -12345, 2 * (2 + 3), (1 + 2 - 3));
+// 	print(b, -b, b * 3, -(a + b + 1), b * -4 + (2 + 3));
+// 	print(func2(), func2() * 10);
+// }
+
+// testExpressionB
+// void main() {
+	// int a1 = func();
+	// int a2 = func2;
+	
+// }
+
+// testCondition
+// void main() {
+// 	int t = 4;
+// 	while (t) {
+// 		print(t);
+// 		t = t - 1;
+// 	}
+// 	if (1 + 50 - '3') 
+// 		print("true");
+// 	else
+// 		print("false");
+// }
+
+// int testFuncRetA() {
+// 	return 1;
+
+// 	if (1)
+// 		return 1;
+// 	else 
+// 		return 0;
+
+// 	if (1)
+// 		return 1;
+// 	return 2;
+// }
+
+// void testFuncRetA1() {
+	// return;
+	// retrun 1;
+
+	// if(1)
+	// 	return;
+
+	// int a;
+	// scan(a);
+	// if(a)
+	// 	print("true");
+	// else
+	// 	print("false");
+
+// }
+
+// int testFuncRetB() {
+// 	return;
+
+// 	if(1)
+// 		return 1;
+
+// 	if(1)
+// 		return 1;
+// 	else
+// 		print(1);
+	
+// 	while (1)
+// 		return 1;
+
+// }
+
+// testPrint
+// void main() {
+// 	int a = 5, b = a + 1;
+// 	print(a, b);
+// 	print("hello", '!');
+// 	print("hello\n", "world!\n");
+// 	print('\x41');
+// }
+
+// void testFunctionCall() {
+// 	int a = func3(1, 2);
+// 	a = func1();
+// 	func1();
+// 	func3(1, 2);
+// 	a = 3 + -func2(2) * 6;
+// }
+
+// int func1(){return 1;}
+// int func2(int p1){
+// 	p1 = 1;
+// 	return p1;
+// }
+// void func3(int p1, const int p2){
+// 	p1 = p2;
+// }
+
+// void testFunctionCall() {
+// 	int p1, p2 = 1;
+// 	p1 = func1();
+// 	func2(p1);
+// 	func3(p1, p2);
+// }
+
+// void testStatement(int p1, int p2) {
+// 	int a1;
+// 	{
+// 		int a1 = p1;
+// 	}
+// 	if (p1 == p2)
+// 		a1 = p1;
+	
+// 	if (p1 <= p2) {
+// 		int a2 = p1;
+// 	}
+	
+// 	if (p1 <= p2)
+// 		if (p1 == p2)
+// 			a1 = 1;
+// 		else
+// 			a1 = 5;
+// 	else {
+// 		a1 = p2;
+// 	}
+
+// 	while (p1 > 1)
+// 		p1 = p1 - 1;
+	
+// 	while (p1 >= 1) {
+// 		int a2 = 3;
+// 		p1 = p1 - a2;
+// 	}
+
+// 	return;
+
+// 	print(p1);
+// 	print(p1, p1 + p2);
+// 	print(1, p2 + 2 * 3, "hello");
+// 	print("hello2");
+
+	// scan(p1);
+// }
+
+

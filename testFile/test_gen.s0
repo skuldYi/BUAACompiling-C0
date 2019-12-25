@@ -1,0 +1,196 @@
+.constants:
+0	S	"fib"
+1	S	"main"
+2	S	"="
+3	S	"<"
+4	S	">="
+.start:
+0	ipush 0
+1	loada 0, 0
+2	ipush 3
+3	istore
+4	ipush 0
+5	loada 0, 1
+6	ipush 47806
+7	istore
+8	ipush 0
+.functions:
+0	0	1	1
+1	1	0	1
+.F0:
+0	loada 0, 0
+1	iload
+2	ipush 0
+3	icmp
+4	jg 9
+5	ipush 0
+6	iret
+7	popn 0
+8	jmp 50
+9	loada 0, 0
+10	iload
+11	ipush 1
+12	icmp
+13	jne 18
+14	ipush 1
+15	iret
+16	popn 0
+17	jmp 49
+18	ipush 0
+19	loada 0, 1
+20	loada 0, 0
+21	iload
+22	ipush 2
+23	isub
+24	istore
+25	loada 0, 1
+26	iload
+27	call 0
+28	ipush 0
+29	loada 0, 3
+30	loada 0, 0
+31	iload
+32	ipush 1
+33	isub
+34	istore
+35	loada 0, 3
+36	iload
+37	call 0
+38	loada 0, 2
+39	loada 0, 2
+40	iload
+41	loada 0, 4
+42	iload
+43	iadd
+44	istore
+45	loada 0, 2
+46	iload
+47	iret
+48	popn 4
+49	popn 0
+50	popn 1
+.F1:
+0	ipush 0
+1	loada 0, 0
+2	ipush 0
+3	istore
+4	ipush 0
+5	loada 1, 2
+6	iscan
+7	istore
+8	ipush 0
+9	loada 0, 2
+10	loada 1, 0
+11	iload
+12	ipush 3
+13	imul
+14	istore
+15	loada 1, 0
+16	loada 0, 2
+17	iload
+18	istore
+19	loada 1, 0
+20	iload
+21	loada 1, 2
+22	iload
+23	icmp
+24	jge 31
+25	loada 1, 2
+26	loada 1, 0
+27	iload
+28	istore
+29	popn 0
+30	popn 0
+31	loada 0, 0
+32	iload
+33	loada 1, 2
+34	iload
+35	icmp
+36	jge 121
+37	loada 0, 0
+38	iload
+39	call 0
+40	loada 0, 1
+41	loada 0, 3
+42	iload
+43	istore
+44	loada 0, 1
+45	iload
+46	loada 1, 1
+47	iload
+48	icmp
+49	jge 79
+50	loadc 0
+51	sprint
+52	ipush 32
+53	cprint
+54	loada 0, 0
+55	iload
+56	iprint
+57	ipush 32
+58	cprint
+59	loadc 2
+60	sprint
+61	ipush 32
+62	cprint
+63	loada 0, 1
+64	iload
+65	iprint
+66	ipush 32
+67	cprint
+68	loadc 3
+69	sprint
+70	ipush 32
+71	cprint
+72	loada 1, 1
+73	iload
+74	iprint
+75	printl
+76	popn 0
+77	popn 0
+78	jmp 107
+79	loadc 0
+80	sprint
+81	ipush 32
+82	cprint
+83	loada 0, 0
+84	iload
+85	iprint
+86	ipush 32
+87	cprint
+88	loadc 2
+89	sprint
+90	ipush 32
+91	cprint
+92	loada 0, 1
+93	iload
+94	iprint
+95	ipush 32
+96	cprint
+97	loadc 4
+98	sprint
+99	ipush 32
+100	cprint
+101	loada 1, 1
+102	iload
+103	iprint
+104	printl
+105	popn 0
+106	popn 0
+107	ipush 0
+108	loada 0, 4
+109	loada 0, 0
+110	iload
+111	ipush 1
+112	iadd
+113	istore
+114	loada 0, 0
+115	loada 0, 4
+116	iload
+117	istore
+118	popn 2
+119	popn 0
+120	jmp 31
+121	ipush 0
+122	iret
+123	popn 3

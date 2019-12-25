@@ -5,13 +5,11 @@
 #include <utility>
 #include <iostream>
 
-namespace miniplc0 {
+namespace c0 {
 
 	inline void DieAndPrint(std::string condition) {
 		std::cout << "Exception: " <<  condition << "\n";
 		std::cout << "The program should not reach here.\n";
-		std::cout << "Please check your program carefully.\n";
-		std::cout << "If you believe it's not your fault, please report this to TAs.\n";
 		std::abort();
 		// or *((int*)114514) = 19260817;
 	}
@@ -23,21 +21,30 @@ namespace miniplc0 {
 		ErrEOF,
 		ErrInvalidInput,
 		ErrInvalidIdentifier,
+		ErrInvalidNumberFormat,
 		ErrIntegerOverflow, // int32_t overflow.
-		ErrNoBegin,
-		ErrNoEnd,
 		ErrNeedIdentifier,
 		ErrConstantNeedValue,
 		ErrNoSemicolon,
-		ErrInvalidVariableDeclaration,
 		ErrIncompleteExpression,
 		ErrNotDeclared,
 		ErrAssignToConstant,
 		ErrDuplicateDeclaration,
 		ErrNotInitialized,
 		ErrInvalidAssignment,
-		ErrInvalidPrint
-	};
+		ErrInvalidPrint,
+		ErrIncompleteComment,
+		ErrInvalidCharacter,
+		ErrVoidVariable,
+        ErrNeedTypeSpecifier,
+        ErrNeedStatement,
+        ErrMissingBrace,
+        ErrSyntaxError,
+        ErrFunctionNotDefined,
+        ErrInvalidFunctionCall,
+        ErrInvalidReturnValue,
+        ErrNeedReturnValue
+    };
 
 	class CompilationError final{
 	private:
