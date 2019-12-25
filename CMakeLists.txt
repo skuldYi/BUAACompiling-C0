@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(c0)
+project(cc0)
 
 add_subdirectory(3rd_party/argparse)
 add_subdirectory(3rd_party/fmt)
@@ -62,34 +62,34 @@ endif()
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB} argparse fmt::fmt)
 
 # For tests
-add_subdirectory(3rd_party/catch2)
-enable_testing()
-
-set(test_src
-	tests/test_main.cpp
-        tests/test_tokenizer.cpp.old
-	tests/simple_vm.hpp
-		tests/test_analyser.cpp.old
-)
-
-add_executable(c0_test ${test_src})
-target_include_directories(c0_test PRIVATE .)
-target_link_libraries(c0_test Catch2::Test ${PROJECT_LIB} fmt::fmt)
-add_test(all_test c0_test)
-find_program(OPEN_CPP_COVERAGE OpenCppCoverage.exe)
-
-if (MSVC AND OPEN_CPP_COVERAGE)
-	string(REPLACE "/" "\\" MY_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
-	add_custom_command(TARGET c0_test
-					   POST_BUILD
-					   COMMAND ${OPEN_CPP_COVERAGE} 
-					            --sources ${MY_SOURCE_DIR} 
-								--excluded_sources ${MY_SOURCE_DIR}\\3rd_party
-								"$<TARGET_FILE:c0_test>")
-else()
-	
-endif()
-
-set_target_properties(c0_test PROPERTIES
-                      CXX_STANDARD 17
-                      CXX_STANDARD_REQUIRE ON)
+#add_subdirectory(3rd_party/catch2)
+#enable_testing()
+#
+#set(test_src
+#	tests/test_main.cpp
+#        tests/test_tokenizer.cpp.old
+#	tests/simple_vm.hpp
+#		tests/test_analyser.cpp.old
+#)
+#
+#add_executable(c0_test ${test_src})
+#target_include_directories(c0_test PRIVATE .)
+#target_link_libraries(c0_test Catch2::Test ${PROJECT_LIB} fmt::fmt)
+#add_test(all_test c0_test)
+#find_program(OPEN_CPP_COVERAGE OpenCppCoverage.exe)
+#
+#if (MSVC AND OPEN_CPP_COVERAGE)
+#	string(REPLACE "/" "\\" MY_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+#	add_custom_command(TARGET c0_test
+#					   POST_BUILD
+#					   COMMAND ${OPEN_CPP_COVERAGE}
+#					            --sources ${MY_SOURCE_DIR}
+#								--excluded_sources ${MY_SOURCE_DIR}\\3rd_party
+#								"$<TARGET_FILE:c0_test>")
+#else()
+#
+#endif()
+#
+#set_target_properties(c0_test PROPERTIES
+#                      CXX_STANDARD 17
+#                      CXX_STANDARD_REQUIRE ON)

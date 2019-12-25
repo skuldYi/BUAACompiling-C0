@@ -100,14 +100,14 @@ int main(int argc, char** argv) {
 	argparse::ArgumentParser program("c0");
 	program.add_argument("input")
 		.help("speicify the file to be compiled.");
-	program.add_argument("-t")
-		.default_value(false)
-		.implicit_value(true)
-		.help("perform tokenization for the input file.");
-	program.add_argument("-l")
-		.default_value(false)
-		.implicit_value(true)
-		.help("perform syntactic analysis for the input file.");
+//	program.add_argument("-t")
+//		.default_value(false)
+//		.implicit_value(true)
+//		.help("perform tokenization for the input file.");
+//	program.add_argument("-l")
+//		.default_value(false)
+//		.implicit_value(true)
+//		.help("perform syntactic analysis for the input file.");
 	program.add_argument("-s")
 		.default_value(false)
 		.implicit_value(true)
@@ -166,14 +166,14 @@ int main(int argc, char** argv) {
 		fmt::print(stderr, "You can only generate byte code or binary file at one time.");
 		exit(2);
 	}
-	
+
 //	if (program["-t"] == true) {
 //		Tokenize(*input, *output);
 //	}
-	if (program["-l"] == true) {
-		Analyse(*input, *output);
-	}
-	else if (program["-s"] == true) {
+//	if (program["-l"] == true) {
+//		Analyse(*input, *output);
+//	}
+	if (program["-s"] == true) {
 		Compile(*input, *output);
 	}
 	else if (program["-c"] == true) {
