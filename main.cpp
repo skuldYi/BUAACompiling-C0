@@ -104,10 +104,10 @@ int main(int argc, char** argv) {
 //		.default_value(false)
 //		.implicit_value(true)
 //		.help("perform tokenization for the input file.");
-//	program.add_argument("-l")
-//		.default_value(false)
-//		.implicit_value(true)
-//		.help("perform syntactic analysis for the input file.");
+	program.add_argument("-l")
+		.default_value(false)
+		.implicit_value(true)
+		.help("perform syntactic analysis for the input file.");
 	program.add_argument("-s")
 		.default_value(false)
 		.implicit_value(true)
@@ -170,10 +170,10 @@ int main(int argc, char** argv) {
 //	if (program["-t"] == true) {
 //		Tokenize(*input, *output);
 //	}
-//	if (program["-l"] == true) {
-//		Analyse(*input, *output);
-//	}
-	if (program["-s"] == true) {
+	if (program["-l"] == true) {
+		Analyse(*input, *output);
+	}
+	else if (program["-s"] == true) {
 		Compile(*input, *output);
 	}
 	else if (program["-c"] == true) {
